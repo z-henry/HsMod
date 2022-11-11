@@ -47,7 +47,7 @@ namespace HsMod
         public static StringBuilder Template(string title = "", string body = "")
         {
             StringBuilder builder = new StringBuilder();
-            string nav = (System.IO.File.Exists(CommandConfig.hsMatchLogPath) && title != "index") ? "<li class=\"nav_li\"><a href=\"/matchlog\"><button class=\"btn_li\">炉石对局</button></a></li>" : "";
+            string nav = (title != "index") ? "<li class=\"nav_li\"><a href=\"/matchlog\"><button class=\"btn_li\">炉石对局</button></a></li>" : "";
             if (title != "index")
             {
                 nav = $@"<center>
@@ -134,7 +134,7 @@ text-decoration: none;
         public static StringBuilder Template(StringBuilder body, string title = "")
         {
             StringBuilder builder = new StringBuilder();
-            string nav = (System.IO.File.Exists(CommandConfig.hsMatchLogPath) && title != "index") ? "<li class=\"nav_li\"><a href=\"/matchlog\"><button class=\"btn_li\">炉石对局</button></a></li>" : "";
+            string nav = title != "index" ? "<li class=\"nav_li\"><a href=\"/matchlog\"><button class=\"btn_li\">炉石对局</button></a></li>" : "";
             if (title != "index")
             {
                 nav = $@"<center>
@@ -226,7 +226,7 @@ text-decoration: none;
             btn += @"<a href=""/skins""><button class=""btn_li"">皮肤信息</button><br/></a><br/>";
             btn += @"<a href=""/lettuce""><button class=""btn_li"">佣兵关卡</button><br/></a><br/>";
             btn += @"<a href=""/mercenaries""><button class=""btn_li"">佣兵收藏</button><br/></a><br/>";
-            if (System.IO.File.Exists(CommandConfig.hsMatchLogPath)) btn += @"<a href=""/matchlog""><button class=""btn_li"">炉石对局</button><br/></a><br/>";
+            btn += @"<a href=""/matchlog""><button class=""btn_li"">炉石对局</button><br/></a><br/>";
             btn += @"<a href=""/about""><button class=""btn_li"">关&emsp;&emsp;于</button><br/></a><br/>";
             string body = @"<h1 style=""text-align: center; opacity: 0.6;"">HsMod</h1>";
             body += $@"<div style=""text-align: center; width: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);"">{btn}</div>";
@@ -267,7 +267,7 @@ text-decoration: none;
             try
             {
                 builder.Append("账号：");
-                builder.Append(BnetPresenceMgr.Get()?.GetMyPlayer()?.GetBattleTag()?.ToString());
+                builder.Append(BnetPresenceMgr.Get()?.GetMyPlayer()?.GetBattleTag()?.GetName());
                 builder.Append("<br />");
                 builder.Append("金币：");
                 builder.Append(netCache?.GetGoldBalance().ToString());
@@ -1021,7 +1021,8 @@ text-decoration: none;
         public static StringBuilder MatchLogPage()
         {
             StringBuilder builder = new StringBuilder();
-            if (!System.IO.File.Exists(CommandConfig.hsMatchLogPath)) return Template(builder.Append("对局文件不存在！"), "MatchLog");
+            if (!System.IO.File.Exists(System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log")))
+                return Template(builder.Append("对局文件不存在！"), "MatchLog");
             else builder.Append(@"<h3 style=""text-align: center;"">对局记录</h3>");
 
             try
@@ -1036,13 +1037,13 @@ text-decoration: none;
                 temp += "</tr>";
                 builder.Append(temp);
 
-                foreach (string line in System.IO.File.ReadLines(CommandConfig.hsMatchLogPath).Reverse())
+                foreach (string line in System.IO.File.ReadLines(System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log")).Reverse())
                 {
                     temp = "";
                     if (line != String.Empty)
                     {
                         temp += "<tr>";
-                        string[] lineSplit = line.Split(',');
+                        string[] lineSplit = line.Split('\t');
                         for (int i = 0; i < lineSplit.Length; i++)
                         {
                             if (i == 1 && lineSplit[i].Length > 0)
@@ -1054,6 +1055,8 @@ text-decoration: none;
                                 else if (int.Parse(lineSplit[i]) < 0) temp += $"<td style=\"color:#FF4136\">{lineSplit[i]}</td>";
                                 else temp += $"<td>{lineSplit[i]}</td>";
                             }
+                            else if (i == 5) continue;
+                            else if (i == 6) temp += $"<td>首发：{lineSplit[i - 1]}<br />后备：{lineSplit[i]}</td>";
                             else temp += $"<td>{lineSplit[i]}</td>";
                         }
                         temp += "</tr>";

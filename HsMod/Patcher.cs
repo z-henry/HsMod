@@ -827,6 +827,14 @@ namespace HsMod
                 return list;
             }
 
+			//排队日志记录
+			[HarmonyPrefix]
+			[HarmonyPatch(typeof(SplashScreen), "UpdateQueueInfo")]
+			public static bool PatchUpdateQueueInfo(Network.QueueInfo queueInfo)
+			{
+                Debug.Log($"排队中，预计{queueInfo.secondsTilEnd}秒");
+				return true;
+			}
 
         }
 
@@ -1691,7 +1699,7 @@ namespace HsMod
                             //}
                             finalResult = $"{String.Join("<br />", DateTime.Now.ToString().Split(' '))},{finalResult},{gameRank},{gameType},{Utils.CacheLastOpponentFullName},";
                             finalResult += $"High:{Utils.CacheLastOpponentAccountID.High}+Low:{Utils.CacheLastOpponentAccountID.Low} => 已举报";
-                            System.IO.File.AppendAllText(CommandConfig.hsMatchLogPath, finalResult + "\n");
+                            System.IO.File.AppendAllText(System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log"), finalResult + "\n");
                             Utils.CacheLastOpponentAccountID = null;
                         }
                     }
