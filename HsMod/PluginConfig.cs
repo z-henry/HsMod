@@ -39,14 +39,14 @@ namespace HsMod
         public static ConfigEntry<bool> isShowCollectionCardIdEnable;
         public static ConfigEntry<bool> isShowRetireForever;
         public static ConfigEntry<bool> isIdleKickEnable;
+        public static ConfigEntry<bool> isBypassDeckShareCodeCheckEnable;
 
         //public static ConfigEntry<Utils.QuickMode> quickModeState;
         public static ConfigEntry<bool> isQuickModeEnable;
         public static ConfigEntry<bool> isCardTrackerEnable;
+        public static ConfigEntry<bool> isCardRevealedEnable;
         public static ConfigEntry<bool> isMoveEnemyCardsEnable;
         public static ConfigEntry<bool> isAutoReportEnable;
-        public static ConfigEntry<bool> isFiresideGatheringEnable;
-        public static ConfigEntry<double> firesideGatheringLatitude, firesideGatheringLongitude, firesideGatheringGpsAccuracy;
 
         public static ConfigEntry<bool> isAutoRecvMercenaryRewardEnable;
         public static ConfigEntry<bool> isMercenaryBattleZoom;
@@ -54,10 +54,12 @@ namespace HsMod
         public static ConfigEntry<Utils.CardState> randomMercenarySkinEnable;
 
         public static ConfigEntry<bool> isShutUpBobEnable;
+        public static ConfigEntry<bool> isBgsGoldenEnable;
 
         public static ConfigEntry<bool> isOpponentGoldenCardShow;
+        public static ConfigEntry<bool> isSignatureCardStateEnable;
         public static ConfigEntry<Utils.CardState> goldenCardState;
-        public static ConfigEntry<Utils.CardState> diamondCardState;
+        public static ConfigEntry<Utils.CardState> maxCardState;
 
         public static ConfigEntry<KeyboardShortcut> keyTimeGearUp;
         public static ConfigEntry<KeyboardShortcut> keyTimeGearDown;
@@ -113,9 +115,10 @@ namespace HsMod
         public static ConfigEntry<bool> isFakeRandomResult;
         public static ConfigEntry<bool> isFakeRandomRarity;
         public static ConfigEntry<bool> isFakeRandomPremium;
-        public static ConfigEntry<bool> isFakeRandomDiamond;
+        public static ConfigEntry<bool> isFakeAtypicalRandomPremium;
         public static ConfigEntry<TAG_PREMIUM> fakeRandomPremium;
         public static ConfigEntry<Utils.CardRarity> fakeRandomRarity;
+        public static ConfigEntry<int> fakeCatchupCount;
         public static ConfigEntry<int> fakeCardID1;
         public static ConfigEntry<TAG_PREMIUM> fakeCardPremium1;
         public static ConfigEntry<int> fakeCardID2;
@@ -169,8 +172,10 @@ namespace HsMod
             //isAutoRestart = config.Bind("优化", "退出时重启", false, "（可能无效）遇到错误是否自动重启");
             isShowCardLargeCount = config.Bind("优化", "收藏卡牌数量", false, "是否显示收藏卡牌数量大于等于10时的数量（选中时暂有Bug）");
             isShowCollectionCardIdEnable = config.Bind("优化", "显示卡牌ID", false, "是否在右键选择卡牌（皮肤）时，显示并复制所选内容的CardID");
+            isBypassDeckShareCodeCheckEnable = config.Bind("优化", "卡组分享代码检测", false, "是否移除卡组分享代码检测");
             isShowRetireForever = config.Bind("优化", "显示放弃", false, "允许在0-0时放弃套牌");
             isIdleKickEnable = config.Bind("优化", "允许掉线", true, "（尚未测试）是否允许长时间无操作掉线（启动游戏时无法加载配置）");
+
 
             isQuickPackOpeningEnable = config.Bind("开包", "开包加速", false, "开包加速，使用空格开包时直接展示结果");
             isAutoPackOpeningEnable = config.Bind("开包", "自动开包", false, "（慎用，有BUG！）开完全部卡包，不区分卡包品类（基于开包加速）");
@@ -179,29 +184,29 @@ namespace HsMod
             isAutoReportEnable = config.Bind("好友", "自动举报", false, "对局结束后自动举报对手昵称违规、作弊和脚本、恶意投降");
             // isAutoReportEnable = config.Bind("好友", "自动举报", true, new ConfigDescription("对局结束后自动举报对手昵称违规、作弊和脚本、恶意投降", null, new object[] { "Advanced" }));
             isMoveEnemyCardsEnable = config.Bind("好友", "观战展示卡牌", false, "（尚未测试）在Ob中展示(旋转)对手手中的牌");
-            isFiresideGatheringEnable = config.Bind("好友", "炉边聚会虚拟定位", false, "是否启用炉边聚会虚拟定位");
-            firesideGatheringLatitude = config.Bind("好友", "炉边聚会纬度", 0.0, "炉边聚会纬度");
-            firesideGatheringLongitude = config.Bind("好友", "炉边聚会经度", 0.0, "炉边聚会经度");
-            firesideGatheringGpsAccuracy = config.Bind("好友", "炉边聚会Gps定位精度", 54.0, "炉边聚会定位精度");
+
 
             isQuickModeEnable = config.Bind("炉石", "快速战斗", false, "是否启用酒馆或佣兵AI快速战斗模式");
             isFullnameShow = config.Bind("炉石", "显示全名", false, "是否显示对手战网全名；如果启用该选项，还会允许添加当前对手(启动快捷键时，也允许添加对手)。");
             isOpponentRankInGameShow = config.Bind("炉石", "显示天梯等级", false, "是否在传说前显示对手天梯等级");
-            isCardTrackerEnable = config.Bind("炉石", "卡牌追踪", false, "标记已知的卡牌（和记牌器五五开）");
+            isCardTrackerEnable = config.Bind("炉石", "卡牌追踪", false, "推测对手卡牌，并给出提示（例如：抉择等，有概率识别错误）");
+            isCardRevealedEnable = config.Bind("炉石", "卡牌揭示", false, "以明牌方式展示已知的卡牌（有概率导致炉石自动断线重连）");
             isSkipHeroIntro = config.Bind("炉石", "跳过英雄介绍", false, "是否跳过英雄介绍(ShouldSkipMulligan)");
             isExtendedBMEnable = config.Bind("炉石", "表情无冷却", false, "是否允许无限制表情(延迟最低1.5s)");
             isThinkEmotesEnable = config.Bind("炉石", "思考表情", true, "是否允许显示思考表情");
             receiveEnemyEmoteLimit = config.Bind("炉石", "表情数量", -1, new ConfigDescription("游戏内表情数量接收限制，超过自动屏蔽对手表情，0时开局屏蔽，-1不限制（有小bug）", new AcceptableValueRange<int>(-1, 100)));
             isOpponentGoldenCardShow = config.Bind("炉石", "对手卡牌特效", true, "是否显示对手卡牌特效(覆盖ALL配置)");
+            isSignatureCardStateEnable = config.Bind("炉石", "异画特效", true, "是否在卡牌最高特效中显示异画（仅影响卡牌最高特效）");
             goldenCardState = config.Bind("炉石", "金卡特效", Utils.CardState.Default, "强制金卡特效");
-            diamondCardState = config.Bind("炉石", "钻石卡特效", Utils.CardState.Default, "强制钻石卡特效（如果有）");
+            maxCardState = config.Bind("炉石", "卡牌最高特效", Utils.CardState.Default, "强制卡牌最高特效特效（目前优先级：钻石、异画、金卡、普通）");
 
             isAutoRecvMercenaryRewardEnable = config.Bind("佣兵", "自动领奖", false, "是否自动领取佣兵佣兵奖励（屏蔽宝箱）");
             isMercenaryBattleZoom = config.Bind("佣兵", "允许缩放", true, "（可能存在BUG）是否允许佣兵战斗时缩放画面");
-            mercenaryDiamondCardState = config.Bind("佣兵", "钻石皮肤替换", Utils.CardState.Default, "如果可以，是否替换成钻石皮肤（优先级低于炉石-钻石卡特效）");
+            mercenaryDiamondCardState = config.Bind("佣兵", "钻石皮肤替换", Utils.CardState.Default, "如果可以，是否替换成钻石皮肤（优先级低于炉石-卡牌最高特效）");
             randomMercenarySkinEnable = config.Bind("佣兵", "随机皮肤", Utils.CardState.Default, "随机皮肤（不包含钻皮且炉石-钻石卡特效值不能为disabled）");
 
             isShutUpBobEnable = config.Bind("酒馆", "沉默鲍勃", false, "是否让鲍勃闭嘴");
+            isBgsGoldenEnable = config.Bind("酒馆", "酒馆镀金", false, "（测试，需要在炉石卡牌特效开启金卡特效）是否镀金酒馆。该镀金不会镀金随从和任务线。");
             //考虑导出单独配置
             skinCoin = config.Bind("皮肤", "硬币", -1, "幸运币的偏好ID，-1表示不做修改（游戏内模拟拔线可以实时更新）");
             skinCardBack = config.Bind("皮肤", "卡背", -1, "卡背的偏好ID，-1表示不做修改（实时生效）");
@@ -217,7 +222,7 @@ namespace HsMod
             keyTimeGearDown = config.Bind("快捷键", "齿轮倍率-1", new KeyboardShortcut(KeyCode.DownArrow), "齿轮倍率减少1，默认方向下");
             keyTimeGearDefault = config.Bind("快捷键", "齿轮倍率归零", new KeyboardShortcut(KeyCode.LeftArrow), "恢复默认齿轮倍率，默认方向左");
             keyTimeGearMax = config.Bind("快捷键", "齿轮倍率最大", new KeyboardShortcut(KeyCode.RightArrow), "齿轮倍率小于4时变为4，大于4时变为8，默认方向右");
-            keySimulateDisconnect = config.Bind("快捷键", "模拟拔线", new KeyboardShortcut(KeyCode.D, KeyCode.LeftControl), "模拟掉线重连，默认左Ctrl+D");
+            keySimulateDisconnect = config.Bind("快捷键", "模拟拔线", new KeyboardShortcut(KeyCode.D, KeyCode.LeftControl), "模拟掉线重连，注意需要禁用报错退出并允许弹出消息，默认左Ctrl+D");
             keyCopyBattleTag = config.Bind("快捷键", "复制对手战网标签", new KeyboardShortcut(KeyCode.C, KeyCode.LeftControl), "复制游戏内对手战网ID，默认左Ctrl+C");
             keyCopySelectBattleTag = config.Bind("快捷键", "复制所选对手战网标签", new KeyboardShortcut(KeyCode.Mouse0), "复制酒馆内所选对手战网ID，默认鼠标左键");
             keyConcede = config.Bind("快捷键", "投降", new KeyboardShortcut(KeyCode.Space, KeyCode.LeftControl), "投降，默认左Ctrl+空格");
@@ -237,16 +242,16 @@ namespace HsMod
             keyEmoteOops = config.Bind("快捷键", "失误", new KeyboardShortcut(KeyCode.Alpha5), "表情失误，默认数字键5");
             keyEmoteThreaten = config.Bind("快捷键", "威胁", new KeyboardShortcut(KeyCode.Alpha6), "表情威胁，默认数字键6");
 
-            hsLogPath = config.Bind("Dev", "炉石日志", "", new ConfigDescription("炉石进程日志文件位置（相对于Hearthstone）", null, new object[] { "Advanced" }));
-            hsMatchLogPath = config.Bind("Dev", "对局日志", "gamerecord", @"炉石对局日志文件位置（相对于Hearthstone\BepInEx\Log）");
-            autoQuitTimer = config.Bind("Dev", "定时退出", (long)0, "当游戏运行x秒后（在对局结束时）自动退出，x<=0时该选项无效。");
-            isFakeOpenEnable = config.Bind("Dev", "模拟开包状态", false, "是否启用模拟开包（修改该选项后建议重启炉石，启用时可能会导致卡包信息统计异常）");
-            buyAdventure = config.Bind("Dev", "冒险购买", Utils.BuyAdventureTemplate.DoNothing, "（不建议购买卡拉赞）选择一个冒险进行购买尝试（有概率封号，酌情考虑使用）");
-            isKarazhanFixEnable = config.Bind("Dev", "卡拉赞修复", false, "（请打完后请关闭，目前无法打序章）卡拉赞黑鸦翱翔修复，也可以用作冒险跳关。（有概率封号，酌情考虑使用）");
-            webServerPort = config.Bind("Dev", "网站端口", 58744, new ConfigDescription("WebServer端口，参数最先选用命令行", new AcceptableValueRange<int>(1, 65535)));
-            webPageBackImg = config.Bind("Dev", "网页背景图", "https://imgapi.cn/cos.php", new ConfigDescription("网页背景图片", null, new object[] { "Advanced" }));
-            isWebshellEnable = config.Bind("Dev", "Webshell", false, "Webshell开关");
-            isInternalModeEnable = config.Bind("Dev", "内部模式", false, "是否切换到内部模式（需要重启炉石）");
+            hsLogPath = config.Bind("开发", "炉石日志", "", new ConfigDescription("炉石进程日志文件位置（相对于Hearthstone）", null, new object[] { "Advanced" }));
+            hsMatchLogPath = config.Bind("开发", "对局日志", "gamerecord", @"炉石对局日志文件位置（相对于Hearthstone\BepInEx\Log）");
+            autoQuitTimer = config.Bind("开发", "定时退出", (long)0, "当游戏运行x秒后（在对局结束时）自动退出，x<=0时该选项无效。");
+            isFakeOpenEnable = config.Bind("开发", "模拟开包状态", false, "是否启用模拟开包（修改该选项后建议重启炉石，启用时可能会导致卡包信息统计异常）");
+            buyAdventure = config.Bind("开发", "冒险购买", Utils.BuyAdventureTemplate.DoNothing, "（不建议购买卡拉赞）选择一个冒险进行购买尝试（有概率封号，酌情考虑使用）");
+            isKarazhanFixEnable = config.Bind("开发", "卡拉赞修复", false, "（请打完后请关闭，目前无法打序章）卡拉赞黑鸦翱翔修复，也可以用作冒险跳关。（有概率封号，酌情考虑使用）");
+            webServerPort = config.Bind("开发", "网站端口", 58744, new ConfigDescription("WebServer端口，参数最先选用命令行", new AcceptableValueRange<int>(1, 65535)));
+            webPageBackImg = config.Bind("开发", "网页背景图", "", new ConfigDescription("网页背景图片", null, new object[] { "Advanced" }));
+            isWebshellEnable = config.Bind("开发", "Webshell", false, "Webshell开关");
+            isInternalModeEnable = config.Bind("开发", "内部模式", false, "是否切换到内部模式（需要重启炉石）");
 
             fakeDevicePreset = config.Bind("模拟", "设备模拟模板", Utils.DevicePreset.Default, "（重启炉石后生效）模拟设备，用于领取卡包卡背");
             fakeDeviceOs = config.Bind("模拟", "设备模拟系统", OSCategory.PC, "模拟设备操作系统，当设备模拟模板为Custom时有效。");
@@ -258,10 +263,11 @@ namespace HsMod
             isFakeRandomResult = config.Bind("模拟", "随机结果", false, "是否启用随机结果");
             isFakeRandomRarity = config.Bind("模拟", "随机稀有度", false, "是否随机稀有度（基于随机结果）");
             isFakeRandomPremium = config.Bind("模拟", "随机品质", false, "是否随机品质（基于随机结果）");
-            isFakeRandomDiamond = config.Bind("模拟", "随机钻石", false, "随机品质中包括钻石（基于随机品质）");
+            isFakeAtypicalRandomPremium = config.Bind("模拟", "随机其他特效", false, "随机品质中包括钻石或异画等（基于随机品质）");
             fakeRandomRarity = config.Bind("模拟", "稀有度类型", Utils.CardRarity.LEGENDARY, "指定随机稀有度（基于随机稀有度）");
             fakeRandomPremium = config.Bind("模拟", "品质类型", TAG_PREMIUM.GOLDEN, "指定品质（基于随机品质）");
 
+            fakeCatchupCount = config.Bind("模拟", "追赶包卡牌数量，小于5时，数量随机", -1, new ConfigDescription("Catchup card num", null, new object[] { "Advanced" }));
             fakeCardID1 = config.Bind("模拟", "卡牌1", 71984, new ConfigDescription("Card 1 DbID.", null, new object[] { "Advanced" }));
             fakeCardPremium1 = config.Bind("模拟", "卡牌1品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 1 Premium.", null, new object[] { "Advanced" }));
             fakeCardID2 = config.Bind("模拟", "卡牌2", 71945, new ConfigDescription("Card 2 DbID.", null, new object[] { "Advanced" }));
@@ -342,11 +348,11 @@ namespace HsMod
                     receiveEnemyEmoteLimit.Value = 0;
                     isOpponentGoldenCardShow.Value = false;
                     skinCoin.Value = 1746;   // 初始幸运币
-                    isSkinDefalutHeroEnable.Value = true;
+                    //isSkinDefalutHeroEnable.Value = true;
                     mercenaryDiamondCardState.Value = Utils.CardState.Disabled;
                     randomMercenarySkinEnable.Value = Utils.CardState.Disabled;
                     goldenCardState.Value = Utils.CardState.Disabled;
-                    diamondCardState.Value = Utils.CardState.Disabled;
+                    maxCardState.Value = Utils.CardState.Disabled;
                     configTemplate.Value = Utils.ConfigTemplate.DoNothing;
                     return;
                 case Utils.ConfigTemplate.AntiAwayFromKeyboard:
@@ -370,7 +376,7 @@ namespace HsMod
                     skinCoin.Value = -1;
                     isSkinDefalutHeroEnable.Value = false;
                     goldenCardState.Value = Utils.CardState.Default;
-                    diamondCardState.Value = Utils.CardState.Default;
+                    maxCardState.Value = Utils.CardState.Default;
                     mercenaryDiamondCardState.Value = Utils.CardState.Default;
                     randomMercenarySkinEnable.Value = Utils.CardState.Default;
                     configTemplate.Value = Utils.ConfigTemplate.DoNothing;
@@ -421,7 +427,7 @@ namespace HsMod
             }
         }
 
-        public static void LoadSkinsConfigFromFile(string file = @"BepInEx\config\HsSkins.cfg")
+        public static void LoadSkinsConfigFromFile(string file = "BepInEx/config/HsSkins.cfg")
         {
             HeroesMapping.Clear();
             if (File.Exists(file))
@@ -437,7 +443,8 @@ namespace HsMod
                         {
                             if (!HeroesMapping.ContainsKey(int.Parse(parts[0])))
                             {
-                                HeroesMapping.Add(int.Parse(parts[0]), int.Parse(parts[1]));
+                                string[] skins = parts[1].Split(',');
+                                HeroesMapping.Add(int.Parse(parts[0].Trim()), int.Parse(skins[new System.Random().Next(skins.Length)].Trim()));
                             }
                         }
                     }
@@ -448,6 +455,7 @@ namespace HsMod
                 string newConfigFile = "# 皮肤映射表\n";
                 newConfigFile += "# 说明：主要用作英雄（酒馆、对战）类皮肤替换；按下F4会在BepInEx目录下生成当前全部皮肤信息；\n";
                 newConfigFile += "# 格式：原始皮肤:替换皮肤（:为半角字符）；下一行是一个样例(玛法里奥·怒风替换成大导师玛法里奥)，可以删除\n";
+                newConfigFile += "#      亦支持a:b,c,d这种多值映射，实现随机皮肤。\n";
                 newConfigFile += "274:57761\n\n";
                 File.WriteAllText(file, newConfigFile);
             }
@@ -494,26 +502,6 @@ namespace HsMod
         {
             get { return PluginConfig.isMoveEnemyCardsEnable.Value; }
             set { PluginConfig.isMoveEnemyCardsEnable.Value = value; }
-        }
-        public bool IsFiresideGatheringEnableValue
-        {
-            get { return PluginConfig.isFiresideGatheringEnable.Value; }
-            set { PluginConfig.isFiresideGatheringEnable.Value = value; }
-        }
-        public double FiresideGatheringLatitudeValue
-        {
-            get { return PluginConfig.firesideGatheringLatitude.Value; }
-            set { PluginConfig.firesideGatheringLatitude.Value = value; }
-        }
-        public double FiresideGatheringLongitudeValue
-        {
-            get { return PluginConfig.firesideGatheringLongitude.Value; }
-            set { PluginConfig.firesideGatheringLongitude.Value = value; }
-        }
-        public double FiresideGatheringGpsAccuracyValue
-        {
-            get { return PluginConfig.firesideGatheringGpsAccuracy.Value; }
-            set { PluginConfig.firesideGatheringGpsAccuracy.Value = value; }
         }
         public bool IsShowFPSEnableValue
         {
@@ -565,7 +553,11 @@ namespace HsMod
         {
             get { return (DateTime.Now.Ticks - PluginConfig.timeKeeper) / 10000000; }    // 返回秒
         }
-
+        public bool IsBypassDeckShareCodeCheckEnable
+        {
+            get { return PluginConfig.isBypassDeckShareCodeCheckEnable.Value; }
+            set { PluginConfig.isBypassDeckShareCodeCheckEnable.Value = value; }
+        }
         public string HsMatchLogPathValue
         {
             get { return PluginConfig.CommandConfig.hsMatchLogPath; }

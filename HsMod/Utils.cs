@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text;
 using static HsMod.PluginConfig;
 
 namespace HsMod
@@ -259,8 +261,10 @@ namespace HsMod
 
         public static void TryReportOpponent()
         {
-            List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType> subcomplaintTypes = new List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType>();
-            subcomplaintTypes.Add(Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.BATTLETAG);
+            List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType> subcomplaintTypes = new List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType>
+            {
+                Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.BATTLETAG
+            };
 
             Blizzard.GameService.SDK.Client.Integration.BattleNet.Get().SubmitReport(Utils.CacheLastOpponentAccountID, Blizzard.GameService.SDK.Client.Integration.ReportType.ComplaintType.INAPPROPRIATE_NAME, subcomplaintTypes);
             subcomplaintTypes.Clear();
@@ -365,9 +369,8 @@ namespace HsMod
                         {
                             PegasusLettuce.MercenaryAcknowledgeData mercenaryAcknowledgeData = new PegasusLettuce.MercenaryAcknowledgeData
                             {
-                                Type = PegasusLettuce.MercenaryAcknowledgeData.AcknowledgeType.ACKNOWLEDGE_MERC_ART_VARIATION_ACQUIRED,
+                                Type = PegasusLettuce.MercenaryAcknowledgeData.AcknowledgeType.ACKNOWLEDGE_MERC_PORTRAIT_ACQUIRED,
                                 AssetId = artVariation.m_record.ID,
-                                Premium = (uint)artVariation.m_premium,
                                 Acknowledged = true,
                                 MercenaryId = merc.ID
                             };
@@ -410,20 +413,77 @@ namespace HsMod
 
                     int numNormalCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.NORMAL);
                     int numGoldenCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.GOLDEN);
+                    int numSignatureCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.SIGNATURE);
+                    int numDiamondCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.DIAMOND);
 
-                    CraftingPendingTransaction m_pendingClientTransaction = new CraftingPendingTransaction();
-                    m_pendingClientTransaction.CardID = record.CardId;
-                    m_pendingClientTransaction.Premium = record.PremiumType;
-                    m_pendingClientTransaction.NormalDisenchantCount = numNormalCopiesInCollection;
-                    m_pendingClientTransaction.GoldenDisenchantCount = numGoldenCopiesInCollection;
+                    CraftingPendingTransaction m_pendingClientTransaction = new CraftingPendingTransaction
+                    {
+                        CardID = record.CardId,
+                        Premium = record.PremiumType,
+                        NormalDisenchantCount = numNormalCopiesInCollection,
+                        GoldenDisenchantCount = numGoldenCopiesInCollection,
+                        SignatureDisenchantCount = numSignatureCopiesInCollection,
+                        DiamondDisenchantCount = numSignatureCopiesInCollection
+                    };
 
                     value = -(normalValue * numNormalCopiesInCollection + goldenValue * numGoldenCopiesInCollection);
-                    network.CraftingTransaction(m_pendingClientTransaction, value, numNormalCopiesInCollection, numGoldenCopiesInCollection);
+                    network.CraftingTransaction(m_pendingClientTransaction, value, numNormalCopiesInCollection, numGoldenCopiesInCollection, numSignatureCopiesInCollection, numDiamondCopiesInCollection);
                     m_pendingClientTransaction = null;
                 }
             }
             MyLogger(LogLevel.Warning, "尝试分解粉尘：" + totalSell);
             UIStatus.Get().AddInfo("尝试分解粉尘：" + totalSell);
+        }
+
+        public static void TryGetSafeImg()
+        {
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://qndxx.youth54.cn/SmartLA/dxxjfgl.w?method=getNewestVersionInfo");
+                request.Timeout = 2333;
+                request.ReadWriteTimeout = 2333;
+                request.Method = "GET";
+                request.ContentType = "text/html;charset=UTF-8";
+                request.ServerCertificateValidationCallback = (_s, _x509s, _x509c, _ssl) => { return (true); };
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Stream myResponseStream = response.GetResponseStream();
+                StreamReader myStreamReader = new StreamReader(myResponseStream, Encoding.UTF8);
+                string retString = myStreamReader.ReadToEnd();
+                myStreamReader.Close();
+                myResponseStream.Close();
+
+                var res = System.Text.RegularExpressions.Regex.Match(retString, "https?://h5.cyol.com/special/daxuexi/.*?/");
+                if (res.Success)
+                {
+                    Utils.MyLogger(LogLevel.Warning, res + "images/end.jpg");
+                    request = (HttpWebRequest)WebRequest.Create("http://qndxx.youth54.cn/SmartLA/dxxjfgl.w?method=getNewestVersionInfo");
+                    request.Timeout = 2333;
+                    request.ReadWriteTimeout = 2333;
+                    request.Method = "GET";
+                    request.ContentType = "text/html;charset=UTF-8";
+                    request.ServerCertificateValidationCallback = (_s, _x509s, _x509c, _ssl) => { return (true); };
+                    var statusCode = Convert.ToInt32(((HttpWebResponse)request.GetResponse()).StatusCode);
+                    myResponseStream.Close();
+                    if (statusCode != 200)
+                    {
+                        throw new Exception();
+                    }
+                    else
+                    {
+                        webPageBackImg.Value = res + "images/end.jpg?safeimg";
+                    }
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.MyLogger(LogLevel.Warning, ex);
+                Utils.MyLogger(LogLevel.Warning, ex.StackTrace);
+                webPageBackImg.Value = "";
+            }
         }
 
 
@@ -465,6 +525,32 @@ namespace HsMod
             return dbid;
         }
 
+
+        public static NetCache.BoosterCard GenerateRandomACard(bool rarityRandom = false, bool premiumRandom = false, TAG_RARITY rarity = TAG_RARITY.LEGENDARY, TAG_PREMIUM premium = TAG_PREMIUM.GOLDEN)
+        {
+            if (!rarityRandom) rarity = (TAG_RARITY)fakeRandomRarity.Value;
+            if (!premiumRandom) premium = fakeRandomPremium.Value;
+            if (fakeBoosterDbId.Value.ToString().Substring(0, 7) == "GOLDEN_")
+            {
+                premiumRandom = false;
+                premium = TAG_PREMIUM.GOLDEN;
+            }
+            List<int> dbids = GetCardsDbId();
+            if (premiumRandom)
+            {
+                if (!isFakeAtypicalRandomPremium.Value)
+                {
+                    premium = (TAG_PREMIUM)UnityEngine.Random.Range(0, 2);
+                }
+                else premium = (TAG_PREMIUM)UnityEngine.Random.Range(0, Enum.GetValues(typeof(TAG_PREMIUM)).Length);
+            }
+            NetCache.BoosterCard card = new NetCache.BoosterCard();
+            card.Def.Name = GameUtils.TranslateDbIdToCardId(rarityRandom ? dbids[UnityEngine.Random.Range(0, dbids.Count)] : GetRandomCardID(rarity));
+            card.Def.Premium = premium;
+            return card;
+        }
+
+
         //虚假结果
         public static void GenerateRandomCard(bool rarityRandom = false, bool premiumRandom = false, TAG_RARITY rarity = TAG_RARITY.LEGENDARY, TAG_PREMIUM premium = TAG_PREMIUM.GOLDEN)
         {
@@ -480,9 +566,9 @@ namespace HsMod
             {
                 if (premiumRandom)
                 {
-                    if (!isFakeRandomDiamond.Value)
+                    if (!isFakeAtypicalRandomPremium.Value)
                     {
-                        premium = (TAG_PREMIUM)UnityEngine.Random.Range(0, Enum.GetValues(typeof(TAG_PREMIUM)).Length - 1);
+                        premium = (TAG_PREMIUM)UnityEngine.Random.Range(0, 2);
                     }
                     else premium = (TAG_PREMIUM)UnityEngine.Random.Range(0, Enum.GetValues(typeof(TAG_PREMIUM)).Length);
                 }
@@ -559,7 +645,7 @@ namespace HsMod
                     for (int i = 16; i <= 20; i++)
                     {
                         wingID = i;
-                        if (StoreManager.GetProductItemOwnershipStatus(productType, wingID, out string _) != ItemOwnershipStatus.OWNED)
+                        if (StoreManager.GetStaticProductItemOwnershipStatus(productType, wingID, out string _) != ItemOwnershipStatus.OWNED)
                         {
                             break;
                         }
@@ -570,7 +656,7 @@ namespace HsMod
                     }
                 }
 
-                if (StoreManager.GetProductItemOwnershipStatus(productType, wingID, out string failReason) == ItemOwnershipStatus.OWNED)
+                if (StoreManager.GetStaticProductItemOwnershipStatus(productType, wingID, out string failReason) == ItemOwnershipStatus.OWNED)
                 {
                     Utils.MyLogger(LogLevel.Warning, $"{adventure}：冒险已拥有！");
                     UIStatus.Get().AddInfo("所选冒险已拥有！");
@@ -599,6 +685,7 @@ namespace HsMod
         public static List<int> CacheBgsFinisher = new List<int>();
         public static Dictionary<int, Assets.CardHero.HeroType> CacheHeroes = new Dictionary<int, Assets.CardHero.HeroType>();
         public static string CacheLastOpponentFullName;
+        public static string CacheRawHeroCardId;
         public static Blizzard.GameService.SDK.Client.Integration.BnetAccountId CacheLastOpponentAccountID;
         public static List<MercenarySkin> CacheMercenarySkin = new List<MercenarySkin>();
 
@@ -608,7 +695,7 @@ namespace HsMod
             public static void UpdateCoin()
             {
                 CacheCoin.Clear();
-                foreach (var record in GameDbf.Coin.GetRecords())
+                foreach (var record in GameDbf.CosmeticCoin.GetRecords())
                 {
                     if (record != null)
                     {
@@ -619,7 +706,7 @@ namespace HsMod
             public static void UpdateCoinCard()
             {
                 CacheCoinCard.Clear();
-                foreach (var record in GameDbf.Coin.GetRecords())
+                foreach (var record in GameDbf.CosmeticCoin.GetRecords())
                 {
                     if (record != null)
                     {
@@ -939,7 +1026,7 @@ namespace HsMod
 
         public static class LeakInfo
         {
-            public static void Mercenaries(string savePath = @"BepInEx\HsMercenaries.log")
+            public static void Mercenaries(string savePath = @"BepInEx/HsMercenaries.log")
             {
                 //List<LettuceTeam> teams = CollectionManager.Get().GetTeams();
                 //System.IO.File.WriteAllText(savePath, DateTime.Now.ToLocalTime().ToString() + "\t获取到您的队伍如下：\n");
@@ -954,12 +1041,12 @@ namespace HsMod
                     string saveString;
                     if (record != null)
                     {
-                        saveString = record.ID.ToString() + (record.Heroic ? " Heroic " : " ") + record.BountySetRecord.Name.GetString() + " " + LettuceVillageDataUtil.GetBountyBossName(record);
+                        saveString = record.ID.ToString() + (record.Heroic ? " Heroic " : " ") + record.BountySetRecord.Name.GetString() + " " + GameDbf.Card.GetRecord(record.FinalBossCardId).Name.GetString();
                         System.IO.File.AppendAllText(savePath, saveString + "\n");
                     }
                 }
             }
-            public static void MyCards(string savePath = @"BepInEx\HsRefundCards.log")
+            public static void MyCards(string savePath = @"BepInEx/HsRefundCards.log")
             {
                 System.IO.File.AppendAllText(savePath, DateTime.Now.ToLocalTime().ToString() + "\t获取到全额分解卡牌情况如下：\n");
                 System.IO.File.AppendAllText(savePath, "[Name]\t[PremiumType]\t[Rarity]\t[CardId]\t[CardDbId]\t[OwnedCount]\n");
@@ -975,11 +1062,11 @@ namespace HsMod
                     }
                 }
             }
-            public static void Skins(string savePath = @"BepInEx\HsSkins.log")
+            public static void Skins(string savePath = "BepInEx/HsSkins.log")
             {
                 System.IO.File.WriteAllText(savePath, DateTime.Now.ToLocalTime().ToString() + "\t获取到硬币皮肤如下：\n");
                 System.IO.File.AppendAllText(savePath, "[CARD_ID]\t[Name]\n");
-                foreach (var record in GameDbf.Coin.GetRecords())
+                foreach (var record in GameDbf.CosmeticCoin.GetRecords())
                 {
                     string saveString;
                     if (record != null)

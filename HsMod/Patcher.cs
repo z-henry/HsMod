@@ -5,6 +5,7 @@ using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -41,7 +42,7 @@ namespace HsMod
             }
             catch (Exception ex)
             {
-                Utils.MyLogger(BepInEx.Logging.LogLevel.Error, $"{loadType.Name} => {ex.Message}");
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Error, $"{loadType.Name} => {ex.Message} \n{ex.InnerException}");
             }
         }
 
@@ -93,6 +94,17 @@ namespace HsMod
                 else
                 {
                     UnPatch("PatchRealtimeCardNum");
+                }
+            };
+            isBypassDeckShareCodeCheckEnable.SettingChanged += delegate
+            {
+                if (isBypassDeckShareCodeCheckEnable.Value)
+                {
+                    LoadPatch(typeof(Patcher.PatchDeckShareCode));
+                }
+                else
+                {
+                    UnPatch("PatchDeckShareCode");
                 }
             };
             isIdleKickEnable.SettingChanged += delegate
@@ -181,7 +193,6 @@ namespace HsMod
         {
             LoadPatch(typeof(Patcher));
             LoadPatch(typeof(Patcher.PatchMisc));
-            LoadPatch(typeof(Patcher.PatchFiresideGathering));
             LoadPatch(typeof(Patcher.PatchEmote));
             LoadPatch(typeof(Patcher.PatchIGMMessage));
             LoadPatch(typeof(Patcher.PatchMercenaries));
@@ -194,6 +205,10 @@ namespace HsMod
             if (isShowCardLargeCount.Value)
             {
                 LoadPatch(typeof(Patcher.PatchRealtimeCardNum));
+            }
+            if (isBypassDeckShareCodeCheckEnable.Value)
+            {
+                LoadPatch(typeof(Patcher.PatchDeckShareCode));
             }
             if (isMoveEnemyCardsEnable.Value)
             {
@@ -278,18 +293,19 @@ namespace HsMod
                     return false;
                 }
                 else return true;
-            }
-            //[HarmonyPrefix, HarmonyPatch(typeof(GraphicsManager), "UpdateFramerateSettings")]
-            //public static void PatchGraphicsManagerUpdateFramerateSettings()
-            //{
-            //    if (targetFrameRate.Value > 0)
-            //    {
-            //        Options.Get()?.SetInt(Option.GFX_TARGET_FRAME_RATE, targetFrameRate.Value); ;
-            //    }
-            //}
+			}
 
-            //使用WebToken登录
-            [HarmonyTranspiler]
+			//[HarmonyPrefix, HarmonyPatch(typeof(GraphicsManager), "UpdateFramerateSettings")]
+			//public static void PatchGraphicsManagerUpdateFramerateSettings()
+			//{
+			//    if (targetFrameRate.Value > 0)
+			//    {
+			//        Options.Get()?.SetInt(Option.GFX_TARGET_FRAME_RATE, targetFrameRate.Value); ;
+			//    }
+			//}
+
+			//使用WebToken登录
+			[HarmonyTranspiler]
             [HarmonyPatch(typeof(Hearthstone.Login.DesktopLoginTokenFetcher), "GetTokenFromTokenFetcher")]
             public static IEnumerable<CodeInstruction> PatchGetTokenFromTokenFetcher(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
@@ -342,7 +358,7 @@ namespace HsMod
                         configPath = "./";
                     }
                     path = configPath + "HsClient.config";
-                    System.IO.File.WriteAllText(path, "[Config]\r\nVersion = 3\r\n[Aurora]\r\nVerifyWebCredentials = \"token\"\r\nClientCheck = 0\r\nEnv.Override = 1\r\nEnv = cn.actual.battle.net\r\n");
+                    System.IO.File.WriteAllText(path, "[Config]\r\nVersion = 3\r\n[Aurora]\r\nVerifyWebCredentials = \"token\"\r\nClientCheck = 0\r\nEnv.Override = 1\r\nEnv = cn.actual.battlenet.com.cn\r\n");
 
                 }
             }
@@ -358,7 +374,19 @@ namespace HsMod
                 }
 
                 __instance.Set("Aurora.VerifyWebCredentials", __state);
-                __instance.Set("Aurora.Env", __state.Substring(0, 2).ToLower() + ".actual.battle.net");
+                if (__state.Substring(0, 2).ToLower() == "cn")
+					__instance.Set("Aurora.Env", "cn.actual.battlenet.com.cn");
+				else
+                    __instance.Set("Aurora.Env", __state.Substring(0, 2).ToLower() + ".actual.battle.net");
+            }
+
+            //禁用反作弊
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "OnLoginComplete")]
+            public static bool PatchAntiCheatManagerOnLoginComplete()
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
+                return false;
             }
 
             //禁止发送错误报告
@@ -373,10 +401,10 @@ namespace HsMod
 
             //屏蔽错误报告
             [HarmonyPrefix]
-            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "ReportCaughtException", new Type[] { typeof(string), typeof(string) })]
-            public static bool PatchReportCaughtException(ref string message, ref string stackTrace)
+            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "ReportCaughtException", new Type[] { typeof(Exception) })]
+            public static bool PatchReportCaughtException(ref Exception exception)
             {
-                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "message:" + message + "\tstackTrace" + stackTrace);
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "message:" + exception.Message + "\nInnerException:\n" + exception.InnerException + "\nStackTrace:\n" + exception.StackTrace);
                 return false;
             }
             [HarmonyPrefix]
@@ -391,6 +419,13 @@ namespace HsMod
             {
                 settings = null;
                 __result = false;
+                return false;
+            }
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "get_ExceptionSubmitURL")]
+            public static bool PatchExceptionReporterSubmitURLGetter(ref System.Uri __result)
+            {
+                __result = new Uri(string.Format("http://127.0.0.1/submit/{0}", Blizzard.BlizzardErrorMobile.ReportBuilder.Settings.m_projectID));
                 return false;
             }
 
@@ -772,7 +807,7 @@ namespace HsMod
             {
                 if (isShowRetireForever.Value)
                 {
-                    ___m_retireButton.SetActive(true);
+                    ___m_retireButton?.SetActive(true);
                 }
             }
 
@@ -802,7 +837,7 @@ namespace HsMod
                 else return true;
             }
 
-            //未知变速修改
+            //toast变速修改
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(SocialToastMgr), "AddToast", new Type[]
             {
@@ -977,6 +1012,66 @@ namespace HsMod
             }
         }
 
+        public class PatchDeckShareCode
+        {
+            //移除卡组代码检测
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(CollectionManagerDisplay), "IsValidHeroClassesForCollectionDeck")]
+            public static bool PatchIsValidHeroClassesForCollectionDeck(ref List<TAG_CLASS> heroClasses, ref CollectionDeck deck, ref bool __result)
+            {
+                if (isBypassDeckShareCodeCheckEnable.Value)
+                {
+                    __result = true;
+                    return false;
+                }
+                return true;
+            }
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(CollectionManagerDisplay), "CanPasteShareableDeck", new Type[] { typeof(ShareableDeck), typeof(string) }, new ArgumentType[] { ArgumentType.Normal, ArgumentType.Out })]
+            public static bool PatchCanPasteShareableDeck(ShareableDeck shareableDeck, out string alertMessage, ref bool __result)
+            {
+                alertMessage = string.Empty;
+                if (isBypassDeckShareCodeCheckEnable.Value)
+                {
+                    __result = true;
+                    return false;
+                }
+                return true;
+            }
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(ShareableDeck), "DeserializeFromVersion_1")]
+            public static IEnumerable<CodeInstruction> PatchDeserializeFromVersion_1(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            {
+                if (isBypassDeckShareCodeCheckEnable.Value == false)
+                {
+                    return instructions;
+                }
+                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+                int num = list.FindIndex((CodeInstruction x) => x.opcode == OpCodes.Ldloc_1);
+                num += 2;
+                list[num++] = new CodeInstruction(OpCodes.Nop);
+                list[num++] = new CodeInstruction(OpCodes.Nop);
+                num = list.FindIndex((CodeInstruction x) => x.opcode == OpCodes.Callvirt && (x.operand as MethodInfo).Name == "IsHeroSkin");
+                if (num > 0)
+                {
+                    num++; // brture.s
+                    list[num++] = new CodeInstruction(OpCodes.Nop);
+                    list[num++] = new CodeInstruction(OpCodes.Nop);
+                }
+                return list;
+            }
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(DeckRuleset), "EntityIgnoresRuleset")]
+            public static bool PatchEntityIgnoresRuleset(ref EntityDef def, ref bool __result)
+            {
+                if (isBypassDeckShareCodeCheckEnable.Value)
+                {
+                    __result = true;
+                    return false;
+                }
+                return true;
+            }
+        }
 
         //好友观战相关
         public class PatchDeathOb
@@ -1083,104 +1178,56 @@ namespace HsMod
             })]
             public static IEnumerable<CodeInstruction> PatchZoneHandGetCardPosition(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
-                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-                int num = list.FindLastIndex((CodeInstruction x) => x.opcode == OpCodes.Callvirt && (x.operand as MethodInfo).Name == "IsRevealed");
-                if (num > 0)
+                List<CodeInstruction> newInstructions = new List<CodeInstruction>(instructions);
+                int index = newInstructions.FindLastIndex(x => x.opcode == OpCodes.Callvirt && (x.operand as MethodInfo).Name == "IsRevealed");
+                if (index > 0)
                 {
-                    num++;
-                    object operand = list[num++].operand;
-                    Label label = generator.DefineLabel();
-                    list[num].labels.Add(label);
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, new Func<ConfigValue>(ConfigValue.Get).Method));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Callvirt, typeof(ConfigValue).GetProperty("IsMoveEnemyCardsEnableValue", BindingFlags.Instance | BindingFlags.Public).GetGetMethod()));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Brfalse_S, label));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldarg_0));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldflda, typeof(ZoneHand).GetField("centerOfHand", BindingFlags.Instance | BindingFlags.NonPublic)));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldfld, typeof(Vector3).GetField("z", BindingFlags.Instance | BindingFlags.Public)));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldarg_1));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldloc_3));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldc_I4_2));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Div));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Sub));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, new Func<int, int>(Mathf.Abs).Method));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Conv_R4));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldc_R4, 2f));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, new Func<float, float, float>(Mathf.Pow).Method));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldc_I4_4));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldloc_3));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Mul));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Conv_R4));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Div));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldloc_2));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Mul));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Sub));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldloc_S, (byte)6));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Sub));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldc_R4, 0.6f));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Sub));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Stloc_S, (byte)9));
-                    list.Insert(num, new CodeInstruction(OpCodes.Br_S, operand));
+                    index++;
+                    var l1 = newInstructions[index++].operand;
+                    var l2 = generator.DefineLabel();
+                    var l3 = generator.DefineLabel();
+                    var l4 = generator.DefineLabel();
+                    newInstructions[index].labels.Add(l2);
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Call, new Func<ConfigValue>(ConfigValue.Get).Method));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Callvirt, typeof(ConfigValue).GetProperty("IsMoveEnemyCardsEnableValue", BindingFlags.Instance | BindingFlags.Public).GetGetMethod()));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Brfalse_S, l2));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldarg_0));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldflda, typeof(ZoneHand).GetField("m_centerOfHand", BindingFlags.NonPublic | BindingFlags.Instance)));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldfld, typeof(Vector3).GetField("z", BindingFlags.Public | BindingFlags.Instance)));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldarg_1));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldloc_0));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldc_I4_2));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Div));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Sub));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Call, ((Func<int, int>)Mathf.Abs).Method));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Conv_R4));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldc_R4, 2f));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Call, ((Func<float, float, float>)Mathf.Pow).Method));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldc_I4_4));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldloc_0));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Mul));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Conv_R4));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Div));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldloc_1));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Brtrue_S, l3));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldc_R4, 0f));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Br_S, l4));
+                    newInstructions.Insert(index, new CodeInstruction(OpCodes.Ldc_R4, 1f));
+                    newInstructions[index++].labels.Add(l3);
+                    newInstructions.Insert(index, new CodeInstruction(OpCodes.Mul));
+                    newInstructions[index++].labels.Add(l4);
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Sub));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldloc_S, (byte)6));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Sub));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Ldc_R4, 0.6f));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Sub));
+                    newInstructions.Insert(index++, new CodeInstruction(OpCodes.Stloc_S, (byte)5));
+                    newInstructions.Insert(index, new CodeInstruction(OpCodes.Br_S, l1));
                 }
-                return list;
+                return newInstructions;
             }
         }
 
-        public class PatchFiresideGathering
-        {
-
-            //炉边聚会
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(FiresideGatheringManager), "RequestNearbyFSGs")]
-            public static bool PatchRequestNearbyFSGs(ref bool ___m_isRequestNearbyFSGsPending)
-            {
-                if (isFiresideGatheringEnable.Value)
-                {
-                    ___m_isRequestNearbyFSGsPending = true;
-                    Network.Get().RequestNearbyFSGs(firesideGatheringLatitude.Value, firesideGatheringLongitude.Value, firesideGatheringGpsAccuracy.Value, null);
-                    return false;
-                }
-                return true;
-            }
-            [HarmonyTranspiler]
-            [HarmonyPatch(typeof(FiresideGatheringManager), "OnFSGAllowed")]
-            public static IEnumerable<CodeInstruction> PatchOnFSGAllowed(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-            {
-                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-                int num = list.FindLastIndex((CodeInstruction x) => x.opcode == OpCodes.Callvirt && (x.operand as MethodInfo).Name == "get_GPSOrWifiServicesAvailable");
-                if (num > 0)
-                {
-                    num++;
-                    object operand = list[num].operand;
-                    list.Insert(num++, new CodeInstruction(OpCodes.Brtrue_S, operand));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, new Func<ConfigValue>(ConfigValue.Get).Method));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Callvirt, typeof(ConfigValue).GetProperty("IsFiresideGatheringEnableValue", BindingFlags.Instance | BindingFlags.Public).GetGetMethod()));
-                }
-                return list;
-            }
-
-            private static readonly MethodInfo ChangeStateInfo = typeof(FiresideGatheringLocationHelperDialog).GetMethod("ChangeState", BindingFlags.Instance | BindingFlags.NonPublic);
-            [HarmonyTranspiler]
-            [HarmonyPatch(typeof(FiresideGatheringLocationHelperDialog), "Start")]
-            public static IEnumerable<CodeInstruction> PatchFiresideGatheringLocationHelperDialogStart(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-            {
-                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-                int num = list.FindLastIndex((CodeInstruction x) => x.opcode == OpCodes.Ldfld && (x.operand as FieldInfo).Name == "m_isCheckInFailure");
-                if (num > 0)
-                {
-                    num--;
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, new Func<ConfigValue>(ConfigValue.Get).Method));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Callvirt, typeof(ConfigValue).GetProperty("IsFiresideGatheringEnableValue", BindingFlags.Instance | BindingFlags.Public).GetGetMethod()));
-                    Label label = generator.DefineLabel();
-                    list[num].labels.Add(label);
-                    list.Insert(num++, new CodeInstruction(OpCodes.Brfalse_S, label));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldarg_0));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldc_I4_3));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, ChangeStateInfo));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ret));
-                }
-                return list;
-            }
-        }
 
         //表情相关的Patch
         public class PatchEmote
@@ -1313,6 +1360,14 @@ namespace HsMod
                 }
                 return list;
             }
+            [HarmonyPostfix, HarmonyPatch(typeof(TB_BaconShop), "GetBobActor")]
+            public static void PatchGetBobActor(ref Actor __result)
+            {
+                if (__result != null && HsMod.ConfigValue.Get().IsShutUpBobEnableValue && GameMgr.Get().IsBattlegrounds())
+                {
+                    __result.ActivateSpellBirthState(SpellType.HERO_EMOTE_SILENCED);
+                }
+            }
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(TB_BaconShop), "HandleGameOverWithTiming", MethodType.Enumerator)]
             public static IEnumerable<CodeInstruction> PatchHandleGameOverWithTiming(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -1415,6 +1470,17 @@ namespace HsMod
                 }
                 return list;
             }
+            [HarmonyPrefix, HarmonyPatch(typeof(GameState), "IsUsingFastActorTriggers")]
+            public static bool PatchGameStateIsUsingFastActorTriggers(ref bool __result)
+            {
+                if (ConfigValue.Get().IsQuickModeEnableValue)
+                {
+                    __result = true;
+                    return false;
+                }
+                else return true;
+            }
+
 
         }
 
@@ -1425,49 +1491,93 @@ namespace HsMod
             [HarmonyPatch(typeof(Entity), "GetPremiumType")]
             public static bool PatchGetPremiumType(Entity __instance, ref TAG_PREMIUM __result)
             {
-                if (GameMgr.Get() != null && !GameMgr.Get().IsBattlegrounds() && GameState.Get() != null && GameState.Get().IsGameCreatedOrCreating())
+                try
                 {
-                    Utils.CardState mGolden = goldenCardState.Value;
-                    Utils.CardState mDiamond = diamondCardState.Value;
-
-                    int dbid = GameUtils.TranslateCardIdToDbId(__instance.GetCardId());
-                    bool mercDiamond = false;
-                    bool isMerc = false;
-                    if (Utils.CheckInfo.IsMercenarySkin(__instance.GetCardId(), out Utils.MercenarySkin skin))
+                    if (GameMgr.Get() != null && GameState.Get() != null && GameState.Get().IsGameCreatedOrCreating())
                     {
-                        isMerc = true;
-                        if (dbid == skin.Diamond)
+                        //跳过酒馆随从
+                        if (GameMgr.Get().IsBattlegrounds())
                         {
-                            mercDiamond = true;
+                            if (!isBgsGoldenEnable.Value || __instance.IsMinion() || __instance.IsQuest())
+                                return true;
                         }
-                    }
 
+                        Utils.CardState mGolden = goldenCardState.Value;
+                        Utils.CardState mMaxState = maxCardState.Value;
 
-                    if (__instance.IsControlledByOpposingSidePlayer() && (!isOpponentGoldenCardShow.Value))
-                    {
-                        __result = TAG_PREMIUM.NORMAL;
-                        if (isMerc)
+                        //佣兵镀金
+                        int dbid = GameUtils.TranslateCardIdToDbId(__instance.GetCardId());
+                        bool mercDiamond = false;
+                        bool isMerc = false;
+                        if (Utils.CheckInfo.IsMercenarySkin(__instance.GetCardId(), out Utils.MercenarySkin skin))
                         {
-                            __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.NORMAL);
-                            __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, false);
-                        }
-                        return false;
-                    }
-
-
-                    if (__instance.HasTag(GAME_TAG.HAS_DIAMOND_QUALITY) || mercDiamond)
-                    {
-                        if (mDiamond == Utils.CardState.All || (mDiamond == Utils.CardState.OnlyMy && __instance.IsControlledByFriendlySidePlayer()))
-                        {
-                            if (mercDiamond)
+                            isMerc = true;
+                            if (dbid == skin.Diamond)
                             {
-                                __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.DIAMOND);
-                                __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, true);
+                                mercDiamond = true;
                             }
-                            __result = TAG_PREMIUM.DIAMOND;
+                        }
+
+                        //屏蔽对手特效
+                        if (__instance.IsControlledByOpposingSidePlayer() && (!isOpponentGoldenCardShow.Value) && (!GameMgr.Get().IsBattlegrounds()))
+                        {
+                            __result = TAG_PREMIUM.NORMAL;
+                            if (isMerc)
+                            {
+                                __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.NORMAL);
+                                __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, false);
+                            }
                             return false;
                         }
-                        if ((mDiamond == Utils.CardState.Disabled) && (mGolden == Utils.CardState.Disabled))
+
+
+                        //其他品质
+                        if (__instance.HasTag(GAME_TAG.HAS_DIAMOND_QUALITY) || __instance.HasTag(GAME_TAG.HAS_SIGNATURE_QUALITY) || mercDiamond)
+                        {
+                            if (__instance.HasTag(GAME_TAG.HAS_DIAMOND_QUALITY) || mercDiamond)
+                            {
+                                if (mMaxState == Utils.CardState.All || (mMaxState == Utils.CardState.OnlyMy && __instance.IsControlledByFriendlySidePlayer()))
+                                {
+                                    if (mercDiamond)
+                                    {
+                                        __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.DIAMOND);
+                                        __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, true);
+                                    }
+                                    __result = TAG_PREMIUM.DIAMOND;
+                                    return false;
+                                }
+                            }
+
+                            if (__instance.HasTag(GAME_TAG.HAS_SIGNATURE_QUALITY) && isSignatureCardStateEnable.Value)
+                            {
+                                if (mMaxState == Utils.CardState.All || (mMaxState == Utils.CardState.OnlyMy && __instance.IsControlledByFriendlySidePlayer()))
+                                {
+                                    __result = TAG_PREMIUM.SIGNATURE;
+                                    __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.SIGNATURE);
+                                    return false;
+                                }
+                            }
+
+                            if ((mMaxState == Utils.CardState.Disabled) && (mGolden == Utils.CardState.Disabled))
+                            {
+                                __result = TAG_PREMIUM.NORMAL;
+                                if (isMerc)
+                                {
+                                    __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.NORMAL);
+                                    __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, false);
+                                }
+                                return false;
+                            }
+                        }
+                        //金卡特效
+                        if (mGolden == Utils.CardState.All || (mGolden == Utils.CardState.OnlyMy && __instance.IsControlledByFriendlySidePlayer()))
+                        {
+                            __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.GOLDEN);
+                            __result = TAG_PREMIUM.GOLDEN;
+                            return false;
+                        }
+                        //禁用特效
+                        if (mGolden == Utils.CardState.Disabled)
                         {
                             __result = TAG_PREMIUM.NORMAL;
                             if (isMerc)
@@ -1478,21 +1588,11 @@ namespace HsMod
                             return false;
                         }
                     }
-                    if (mGolden == Utils.CardState.All || (mGolden == Utils.CardState.OnlyMy && __instance.IsControlledByFriendlySidePlayer()))
-                    {
-                        __result = TAG_PREMIUM.GOLDEN;
-                        return false;
-                    }
-                    if (mGolden == Utils.CardState.Disabled)
-                    {
-                        __result = TAG_PREMIUM.NORMAL;
-                        if (isMerc)
-                        {
-                            __instance.SetTag(GAME_TAG.PREMIUM, TAG_PREMIUM.NORMAL);
-                            __instance.SetTag(GAME_TAG.HAS_DIAMOND_QUALITY, false);
-                        }
-                        return false;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex);
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex.StackTrace);
                 }
                 return true;
             }
@@ -1666,6 +1766,9 @@ namespace HsMod
                 {
                     if (!GameMgr.Get().IsSpectator() && (Utils.CacheLastOpponentAccountID != null) && (!String.IsNullOrEmpty(Utils.CacheLastOpponentFullName)))
                     {
+                        LoadSkinsConfigFromFile(); // 更新皮肤映射
+                        Utils.CacheRawHeroCardId = null;
+
                         if (isAutoReportEnable.Value)
                         {
                             Utils.TryReportOpponent();
@@ -1723,55 +1826,76 @@ namespace HsMod
             [HarmonyPatch(typeof(Player), "IsRevealed")]
             public static bool PatchPlayerIsRevealed(ref bool __result)
             {
-                if (isCardTrackerEnable.Value)
+                if (isCardRevealedEnable.Value)
                 {
                     __result = true;
                     return false;
                 }
                 return true;
             }
-            // 剑圣奥卡尼的选择识别（对手抉择提示）
+            // 选择识别（对手抉择提示）
             [HarmonyPrefix]
             [HarmonyPatch(typeof(GameState), "OnPowerHistory")]
             public static void PatchDebugPrintPower(GameState __instance, ref List<Network.PowerHistory> powerList)
             {
-                if (isCardTrackerEnable.Value && !GameMgr.Get().IsBattlegrounds())
+                try
                 {
-                    foreach (var powerHistory in powerList)
+                    if (isCardTrackerEnable.Value && !GameMgr.Get().IsBattlegrounds() && !GameMgr.Get().IsMercenaries())
                     {
-                        if (powerHistory.Type == Network.PowerType.SHOW_ENTITY)
+                        if (powerList == null) return;
+                        List<string> hintList = new List<string>();
+                        int i = 0;
+                        foreach (Network.PowerHistory pl in powerList)
                         {
-                            Network.Entity netEntity = ((Network.HistShowEntity)powerHistory).Entity;
-                            Entity entity = __instance?.GetEntity(netEntity.ID);
-                            if (entity != null && entity.GetControllerSide() == global::Player.Side.OPPOSING)
+                            i++;
+                            if (pl == null) continue;
+                            Network.PowerHistory powerHistory = pl;
+                            if (powerHistory.Type == Network.PowerType.SHOW_ENTITY)
                             {
-                                if (netEntity.CardID == "TSC_032t")
+                                Network.Entity netEntity = ((Network.HistShowEntity)powerHistory).Entity;
+                                Entity entity = __instance?.GetEntity(netEntity.ID);
+                                if (entity != null && entity.GetControllerSide() == global::Player.Side.OPPOSING && entity.GetZone() == TAG_ZONE.SETASIDE && entity.GetCardType() != TAG_CARDTYPE.ENCHANTMENT)
                                 {
-                                    UIStatus.Get().AddInfo("注意：反制随从！", 30f);
-                                    return;
-                                }
-                                else if (netEntity.CardID == "TSC_032t2")
-                                {
-                                    UIStatus.Get().AddInfo("注意：反制法术！", 30f);
-                                    return;
-                                }
-                                else if (entity?.GetZone() == TAG_ZONE.SETASIDE)
-                                {
-                                    EntityDef entityDef = DefLoader.Get().GetEntityDef(netEntity.CardID);
+                                    EntityDef entityDef = DefLoader.Get()?.GetEntityDef(netEntity.CardID);
                                     if (entityDef != null && entityDef.GetCardType() != TAG_CARDTYPE.ENCHANTMENT && !entityDef.IsQuestline())
                                     {
-                                        string name = entityDef.GetName();
-                                        if (!String.IsNullOrEmpty(name))
+                                        string hintText = entityDef.GetName();
+                                        if (hintText != null)
                                         {
-                                            UIStatus.Get().AddInfo($"注意：{name}！", 30f);
+                                            hintText = hintText + "\n" + entityDef.GetCardTextInHand();
+                                            UIStatus.Get().AddInfo($"注意: {hintText}", 15f);
                                         }
                                     }
                                 }
                             }
+                            if (powerHistory.Type == Network.PowerType.FULL_ENTITY)
+                            {
+                                Network.Entity entity3 = ((Network.HistFullEntity)powerHistory).Entity;
+                                int j = 0;
+                                foreach (Network.Entity.Tag tg in entity3.Tags)
+                                {
+                                    j++;
+                                    if (tg.Name == 49 && tg.Value == 4)
+                                    {
+                                        EntityDef entityDef2 = DefLoader.Get().GetEntityDef(entity3.CardID);
+                                        hintList.Add(entityDef2?.GetName());
+                                    }
+                                }
+                            }
+                        }
+                        string hintText2 = string.Join(" ", hintList);
+                        if (hintText2 != "")
+                        {
+                            UIStatus.Get().AddInfo($"注意: {hintText2}", 15f);
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex);
+                }
             }
+
             // 变装大师识别，40牌识别
             [HarmonyPrefix]
             [HarmonyPatch(typeof(MulliganManager), "SetMulliganBannerText", new Type[] { typeof(string), typeof(string) })]
@@ -1851,7 +1975,7 @@ namespace HsMod
             [HarmonyTargetMethod]
             private static MethodInfo PublicLogArchiveLogPath()
             {
-                return AccessTools.TypeByName("LogArchive").GetMethod("get_LogPath"); ;
+                return AccessTools.TypeByName("Log").GetMethod("get_LogsPath"); ;
             }
 
             [HarmonyPostfix]
@@ -1869,20 +1993,21 @@ namespace HsMod
             [HarmonyPatch(typeof(Entity), "LoadCard")]
             public static void PatchLoadCard(Entity __instance, ref string cardId, ref Entity.LoadCardData data)
             {
+                string rawCardID = cardId;
                 if (cardId != null
                     && Utils.CheckInfo.IsMercenarySkin(cardId, out Utils.MercenarySkin skin))
                 {
-                    if ((goldenCardState.Value == Utils.CardState.Disabled) && (diamondCardState.Value == Utils.CardState.Disabled))
+                    if ((goldenCardState.Value == Utils.CardState.Disabled) && (maxCardState.Value == Utils.CardState.Disabled))
                     {
                         cardId = GameUtils.TranslateDbIdToCardId(skin.Default);
-                        return;
+                        goto LoadCardEnd;
                     }
-                    if ((diamondCardState.Value == Utils.CardState.Disabled) || (mercenaryDiamondCardState.Value == Utils.CardState.Disabled))
+                    if ((maxCardState.Value == Utils.CardState.Disabled) || (mercenaryDiamondCardState.Value == Utils.CardState.Disabled))
                     {
                         if (GameUtils.TranslateCardIdToDbId(cardId) == skin.Diamond)
                         {
                             cardId = GameUtils.TranslateDbIdToCardId(skin.Default);
-                            return;
+                            goto LoadCardEnd;
                         }
                     }
                     if (!isOpponentGoldenCardShow.Value)
@@ -1890,23 +2015,23 @@ namespace HsMod
                         if (__instance.GetCard().GetControllerSide() == global::Player.Side.OPPOSING)
                         {
                             cardId = GameUtils.TranslateDbIdToCardId(skin.Default);
-                            return;
+                            goto LoadCardEnd;
                         }
                     }
-                    if ((diamondCardState.Value == Utils.CardState.All) || (mercenaryDiamondCardState.Value == Utils.CardState.All))
+                    if ((maxCardState.Value == Utils.CardState.All) || (mercenaryDiamondCardState.Value == Utils.CardState.All))
                     {
                         if (skin.hasDiamond)
                         {
                             cardId = GameUtils.TranslateDbIdToCardId(skin.Diamond);
-                            return;
+                            goto LoadCardEnd;
                         }
                     }
-                    if ((diamondCardState.Value == Utils.CardState.OnlyMy) || (mercenaryDiamondCardState.Value == Utils.CardState.OnlyMy))
+                    if ((maxCardState.Value == Utils.CardState.OnlyMy) || (mercenaryDiamondCardState.Value == Utils.CardState.OnlyMy))
                     {
                         if (skin.hasDiamond && (__instance.GetCard().GetControllerSide() == global::Player.Side.FRIENDLY))
                         {
                             cardId = GameUtils.TranslateDbIdToCardId(skin.Diamond);
-                            return;
+                            goto LoadCardEnd;
                         }
                     }
                     if ((randomMercenarySkinEnable.Value == Utils.CardState.OnlyMy) || (randomMercenarySkinEnable.Value == Utils.CardState.All))
@@ -1920,11 +2045,11 @@ namespace HsMod
                             if (__instance.GetCard().GetControllerSide() == global::Player.Side.FRIENDLY)
                             {
                                 cardId = GameUtils.TranslateDbIdToCardId(dbid);
-                                return;
+                                goto LoadCardEnd;
                             }
                         }
                         cardId = GameUtils.TranslateDbIdToCardId(dbid);
-                        return;
+                        goto LoadCardEnd;
                     }
                 }
                 //string rawCardId = cardId;
@@ -1938,7 +2063,7 @@ namespace HsMod
                             if (GameUtils.ORDERED_HERO_CLASSES.Contains(tagClass))
                             {
                                 cardId = GameUtils.GetHeroPowerCardIdFromHero(Enumerable.FirstOrDefault(Enumerable.Where(GameDbf.CardHero.GetRecords().OrderBy(x => x.CardId).ToList(), (CardHeroDbfRecord x) => DefLoader.Get().GetEntityDef(x.CardId).GetClass() == tagClass)).CardId);
-                                return;
+                                goto LoadCardEnd;
                             }
                         }
                         catch (Exception ex)
@@ -1963,7 +2088,7 @@ namespace HsMod
                         Utils.UpdateHeroPowerMapping();
                         HeroesPowerMapping.TryGetValue(cardId, out string res);
                         cardId = (res != null && res != "" && res != string.Empty) ? res : cardId;
-                        return;
+                        goto LoadCardEnd;
                     }
                 }
 
@@ -2005,7 +2130,7 @@ namespace HsMod
                                 if (GameUtils.ORDERED_HERO_CLASSES.Contains(tagClass))
                                 {
                                     cardId = GameUtils.TranslateDbIdToCardId(Enumerable.FirstOrDefault(Enumerable.Where(GameDbf.CardHero.GetRecords().OrderBy(x => x.CardId).ToList(), (CardHeroDbfRecord x) => DefLoader.Get().GetEntityDef(x.CardId).GetClass() == tagClass)).CardId);
-                                    return;
+                                    goto LoadCardEnd;
                                 }
                             }
                             catch (Exception ex)
@@ -2016,6 +2141,7 @@ namespace HsMod
 
                         if (__instance.GetCard().GetControllerSide() == Player.Side.FRIENDLY)
                         {
+                            Utils.CacheRawHeroCardId = rawCardID;
                             //UpdateCardsMappingReal(cardId, Utils.SkinType.HERO);
                             if (skinHero.Value != -1)
                                 cardId = GameUtils.TranslateDbIdToCardId(skinHero.Value);
@@ -2047,7 +2173,86 @@ namespace HsMod
                     //UpdateCardsMappingReal(cardId, Utils.SkinType.COIN);
                     cardId = GameUtils.TranslateDbIdToCardId(skinCoin.Value);
                 }
+            LoadCardEnd:    // todo: check Signature
+                try
+                {
+                    __instance?.SetCardId(cardId);
+                    __instance?.SetRealTimePremium(__instance.GetPremiumType());
+                }
+                catch (Exception ex)
+                {
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex);
+                    cardId = rawCardID;
+                    __instance?.SetCardId(rawCardID);
+                    __instance?.SetRealTimePremium(__instance.GetPremiumType());
+
+                }
+                //return;
             }
+
+            //刷新卡牌画面，解决进化、退化异常
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Card), "RefreshActor")]
+            public static void RefreshActor(Card __instance)
+            {
+                try
+                {
+                    // Todo: 添加更细致化的判断条件。
+                    if ((__instance?.GetEntity()?.GetZone() == TAG_ZONE.PLAY) || (__instance?.GetEntity()?.GetZone() == TAG_ZONE.HAND))
+                    {
+                        __instance?.GetActor()?.SetCard(__instance);
+                        __instance?.GetActor()?.SetCardDefFromEntity(__instance.GetEntity());
+                        __instance?.GetActor()?.SetEntity(__instance.GetEntity());
+                        __instance?.GetActor()?.UpdateAllComponents();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex);
+                }
+            }
+
+
+            //判断存在异画是否存在，缓解异画问题 Signature frame for RLK_Prologue_RLK_653 not found.
+            //private static readonly MethodInfo getSignatureActor = typeof(ActorNames).GetMethod("GetSignatureActor", BindingFlags.Instance | BindingFlags.NonPublic);
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(ActorNames), "GetNameWithPremiumType")]
+            public static void PatchGetNameWithPremiumType(ActorNames __instance, ref string __result,
+                                                            ref ActorNames.ACTOR_ASSET actorName, ref TAG_PREMIUM premiumType, ref string cardId)
+            {
+                if (__result != null)
+                {
+                    return;
+                }
+                string text = null;
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"Function return null\nGetNameWithPremiumType(ActorNames.ACTOR_ASSET {actorName}, TAG_PREMIUM {premiumType}, string {cardId});");
+                if (String.IsNullOrEmpty(__result))
+                {
+                    //ActorNames.s_diamondActorAssets.TryGetValue(actorName, out text);
+                    //if (!String.IsNullOrEmpty(text))
+                    //{
+                    //    goto PatchGetNameWithPremiumTypeEnd;
+                    //}
+                    //ActorNames.s_actorAssets.TryGetValue(actorName, out text);
+                    //if (!String.IsNullOrEmpty(text))
+                    //{
+                    //    goto PatchGetNameWithPremiumTypeEnd;
+                    //}
+                    //text = (string)getSignatureActor?.Invoke(__instance, new object[] { cardId, actorName });
+                    //if (!String.IsNullOrEmpty(text))
+                    //{
+                    //    goto PatchGetNameWithPremiumTypeEnd;
+                    //}
+                    ActorNames.s_premiumActorAssets.TryGetValue(actorName, out text);
+                    if (!String.IsNullOrEmpty(text))
+                    {
+                        goto PatchGetNameWithPremiumTypeEnd;
+                    }
+                }
+            PatchGetNameWithPremiumTypeEnd:
+                __result = text;
+            }
+
 
             //鲍勃替换语音
             [HarmonyPrefix]
@@ -2183,30 +2388,30 @@ namespace HsMod
             }
 
             //偏好硬币修改，不需要patch
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(CoinManager), "GetFavoriteCoinId")]
-            public static bool PatchGetFavoriteCoinId(ref int __result)
-            {
-                if (skinCoin.Value == 0) return true;
-                if (Utils.CheckInfo.IsCoin())
-                {
-                    int res = 0;
-                    foreach (var record in GameDbf.Coin.GetRecords())
-                    {
-                        if (record != null)
-                        {
-                            if (record.CardId == skinCoin.Value)
-                            {
-                                res = record.ID;
-                                break;
-                            }
-                        }
-                    }
-                    __result = res;
-                    return false;
-                }
-                return true;
-            }
+            //[HarmonyPrefix]
+            //[HarmonyPatch(typeof(CosmeticCoinManager), "GetFavoriteCoinId")]
+            //public static bool PatchGetFavoriteCoinId(ref int __result)
+            //{
+            //    if (skinCoin.Value == 0) return true;
+            //    if (Utils.CheckInfo.IsCoin())
+            //    {
+            //        int res = 0;
+            //        foreach (var record in GameDbf.CosmeticCoin.GetRecords())
+            //        {
+            //            if (record != null)
+            //            {
+            //                if (record.CardId == skinCoin.Value)
+            //                {
+            //                    res = record.ID;
+            //                    break;
+            //                }
+            //            }
+            //        }
+            //        __result = res;
+            //        return false;
+            //    }
+            //    return true;
+            //}
             //[HarmonyPrefix]
             //[HarmonyPatch(typeof(CoinManager), "GetFavoriteCoinCardId")]
             //public static bool PatchGetFavoriteCoinCardId(ref string __result)
@@ -2283,6 +2488,23 @@ namespace HsMod
                 return false;
             }
 
+            //屏蔽借用套牌时限已到期
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(LoanerDeckDisplay), "CanShowTimerExpiredState")]
+            public static bool PatchCanShowTimerExpiredState(ref bool __result)
+            {
+                if (isIGMMessageShow.Value) return true;
+                __result = false;
+                return false;
+            }
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(LoanerDeckDisplay), "ShouldLoanerDecksBeDisplayed")]
+            public static bool PatchShouldLoanerDecksBeDisplayed(ref bool __result)
+            {
+                if (isIGMMessageShow.Value) return true;
+                __result = false;
+                return false;
+            }
         }
 
         //与佣兵挂机插件可能会冲突 故单独写出
@@ -2554,6 +2776,7 @@ namespace HsMod
             [HarmonyPrefix]
             [HarmonyPatch(typeof(PackOpening), "OpenBooster")]
             public static bool PatchOpenBooster(ref UnopenedPack pack,
+                                                ref int numPacks,
                                                 ref PackOpening __instance,
                                                 ref float ___m_packOpeningStartTime,
                                                 ref int ___m_packOpeningId,
@@ -2568,6 +2791,7 @@ namespace HsMod
                 {
                     return true;
                 }
+
                 Hearthstone.Progression.AchievementManager.Get().PauseToastNotifications();
                 int num = (int)fakeBoosterDbId.Value;
                 if (!GameUtils.IsFakePackOpeningEnabled())
@@ -2575,7 +2799,7 @@ namespace HsMod
                     num = pack.GetBoosterId();
                     ___m_packOpeningStartTime = Time.realtimeSinceStartup;
                     ___m_packOpeningId = num;
-                    BoosterPackUtils.OpenBooster(num);
+                    BoosterPackUtils.OpenBooster(num, numPacks);
                 }
                 ___m_InputBlocker.SetActive(true);
                 if (___m_autoOpenPackCoroutine != null)
@@ -2594,30 +2818,48 @@ namespace HsMod
                 {
                     onBoosterOpened?.Invoke(__instance, null);
                 }
-                ___m_UnopenedPackScroller.Pause(true);
+                ___m_UnopenedPackScroller.Pause(pause: true);
                 return false;
             }
             // 开包结果替换
+            private static readonly MethodInfo triggerHooverDeath = typeof(PackOpening).GetMethod("TriggerHooverDeath", BindingFlags.Instance | BindingFlags.NonPublic);
             [HarmonyPrefix]
             [HarmonyPatch(typeof(PackOpening), "OnBoosterOpened")]
             public static bool PatchOnBoosterOpened(ref float ___m_packOpeningStartTime,
                                                ref PackOpeningDirector ___m_director,
                                                ref int ___m_lastOpenedBoosterId,
                                                ref int ___m_packOpeningId,
-                                               ref bool ___m_autoOpenPending)
+                                               ref bool ___m_autoOpenPending,
+                                               ref UnopenedPack ___m_draggedPack,
+                                               ref UnopenedPack ___m_selectedPack,
+                                               ref GameObject ___m_centerPack,
+                                               ref PackOpening __instance)
             {
                 if (isFakeOpenEnable.Value == false)
                 {
                     return true;
                 }
+
+                triggerHooverDeath?.Invoke(__instance, null);
+
                 float timeToRegisterPackOpening = Time.realtimeSinceStartup - ___m_packOpeningStartTime;
+
+                if (___m_centerPack != null)
+                {
+                    UnityEngine.Object.Destroy(___m_centerPack);
+                    ___m_centerPack = null;
+                }
+
                 ___m_director.Play(___m_lastOpenedBoosterId, timeToRegisterPackOpening, ___m_packOpeningId);
+                ___m_director.SetNumPacksOpened(1);
                 ___m_autoOpenPending = false;
+                bool isCatchup = (bool)(GameDbf.Booster?.GetRecord(___m_lastOpenedBoosterId)?.IsCatchupPack);
                 //List<NetCache.BoosterCard> list = Network.Get().OpenedBooster();
                 if (isFakeRandomResult.Value)
                 {
                     Utils.GenerateRandomCard(isFakeRandomRarity.Value, isFakeRandomPremium.Value);
                 }
+
                 List<NetCache.BoosterCard> cards = new List<NetCache.BoosterCard>
             {
                 new NetCache.BoosterCard
@@ -2656,10 +2898,22 @@ namespace HsMod
                         }
                 }
             };
-                ___m_director.OnBoosterOpened(cards);
+
+                if (isCatchup)
+                {
+                    int catchupCount = UnityEngine.Random.Range(0, 999);
+                    catchupCount = fakeCatchupCount.Value < 5 ? catchupCount : fakeCatchupCount.Value - 5;
+                    for (int i = 0; i < catchupCount; i++)
+                    {
+                        cards.Add(Utils.GenerateRandomACard(isFakeRandomRarity.Value, isFakeRandomPremium.Value));
+                    }
+
+                }
+                ___m_director.OnBoosterOpened(cards, isCatchup);
                 return false;
             }
         }
+
 
         public class PatchFakeDevice
         {
@@ -2715,7 +2969,7 @@ namespace HsMod
 
             private static string GetMD5(string message)
             {
-                byte[] array = new MD5CryptoServiceProvider().ComputeHash(Encoding.Default.GetBytes(message));
+                byte[] array = MD5.Create().ComputeHash(Encoding.Default.GetBytes(message));
                 StringBuilder stringBuilder = new StringBuilder();
                 for (int i = 0; i < array.Length; i++)
                 {
@@ -2884,7 +3138,7 @@ namespace HsMod
             {
                 return null;
             }
-            int tag = playerLeaderboardCard.m_playerHeroEntity.GetTag(GAME_TAG.PLAYER_ID);
+            int tag = playerLeaderboardCard.Entity.GetTag(GAME_TAG.PLAYER_ID);
             if (!GameState.Get().GetPlayerInfoMap().ContainsKey(tag))
             {
                 return null;
