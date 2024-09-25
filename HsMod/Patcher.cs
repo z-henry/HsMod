@@ -1975,7 +1975,7 @@ namespace HsMod
             [HarmonyTargetMethod]
             private static MethodInfo PublicLogArchiveLogPath()
             {
-                return AccessTools.TypeByName("Log").GetMethod("get_LogsPath"); ;
+                return AccessTools.TypeByName("LogSessionConfig").GetMethod("get_LogSessionDirectory"); ;
             }
 
             [HarmonyPostfix]
