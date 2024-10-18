@@ -398,6 +398,7 @@ namespace HsMod
 
         public static void TryRefundCardDisenchant()    //TellServerAboutWhatUserDid
         {
+            return;
             int totalSell = 0;
             Network network = Network.Get();
             network.RegisterNetHandler(PegasusUtil.BoughtSoldCard.PacketID.ID, new Network.NetHandler(TryRefundCardDisenchantCallback), null);
@@ -952,6 +953,11 @@ namespace HsMod
                 if (CacheHeroes.ContainsKey(DbID))
                 {
                     heroType = CacheHeroes[DbID];
+                    return true;
+                }
+                if (DefLoader.Get()?.GetEntityDef(DbID)?.GetCardType() == TAG_CARDTYPE.HERO)
+                {
+                    heroType = Assets.CardHero.HeroType.UNKNOWN;
                     return true;
                 }
                 else

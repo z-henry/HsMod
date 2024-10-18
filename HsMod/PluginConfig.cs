@@ -340,7 +340,6 @@ namespace HsMod
                     isAutoExit.Value = true;
                     isIdleKickEnable.Value = true;
                     isQuickPackOpeningEnable.Value = true;
-                    isAutoRefundCardDisenchantEnable.Value = true;
                     isAutoRecvMercenaryRewardEnable.Value = true;
                     isMercenaryBattleZoom.Value = false;
                     isSkipHeroIntro.Value = true;

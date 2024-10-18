@@ -43,6 +43,9 @@ namespace HsMod
             catch (Exception ex)
             {
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Error, $"{loadType.Name} => {ex.Message} \n{ex.InnerException}");
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Error, "HsMod patch failed!");
+                System.Threading.Thread.Sleep(11451);
+                Application.Quit(114514);
             }
         }
 
@@ -375,8 +378,8 @@ namespace HsMod
 
                 __instance.Set("Aurora.VerifyWebCredentials", __state);
                 if (__state.Substring(0, 2).ToLower() == "cn")
-					__instance.Set("Aurora.Env", "cn.actual.battlenet.com.cn");
-				else
+                    __instance.Set("Aurora.Env", "cn.actual.battlenet.com.cn");
+                else
                     __instance.Set("Aurora.Env", __state.Substring(0, 2).ToLower() + ".actual.battle.net");
             }
 
@@ -384,6 +387,14 @@ namespace HsMod
             [HarmonyPrefix]
             [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "OnLoginComplete")]
             public static bool PatchAntiCheatManagerOnLoginComplete()
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
+                return false;
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "Shutdown")]
+            public static bool PatchAntiCheatManagerShutdown()
             {
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
                 return false;
@@ -1768,11 +1779,17 @@ namespace HsMod
                     {
                         LoadSkinsConfigFromFile(); // 更新皮肤映射
                         Utils.CacheRawHeroCardId = null;
-
-                        if (isAutoReportEnable.Value)
+                        if (!System.IO.File.Exists(CommandConfig.hsMatchLogPath))
                         {
-                            Utils.TryReportOpponent();
-
+                            var f=System.IO.File.Create(CommandConfig.hsMatchLogPath);
+                            f?.Close();
+                        }
+                        if (System.IO.File.Exists(CommandConfig.hsMatchLogPath))
+                        {
+                            if (isAutoReportEnable.Value)
+                            {
+                                Utils.TryReportOpponent();
+                            }
                             string finalResult = "未知";
                             switch (playState)
                             {
@@ -1793,15 +1810,23 @@ namespace HsMod
                             }
 
                             string gameType = (GameMgr.Get().GetGameType() == PegasusShared.GameType.GT_RANKED) ? GameMgr.Get().GetFormatType().ToString() : GameMgr.Get().GetGameType().ToString();
+                          
                             string gameRank = "-";
-                            //if (GameMgr.Get().GetGameType() == PegasusShared.GameType.GT_RANKED && GameMgr.Get().GetFormatType() != PegasusShared.FormatType.FT_UNKNOWN)
-                            //{
-                            //    var currentMedal = RankMgr.Get().GetLocalPlayerMedalInfo().GetCurrentMedalForCurrentFormatType();
-                            //    gameRank = Utils.RankIdxToString(currentMedal.starLevel);
-                            //    gameRank = (gameRank == "传说") ? "传说" + currentMedal.legendIndex.ToString() : gameRank + "-" + currentMedal.earnedStars.ToString();
-                            //}
+                            if ((GameMgr.Get().GetGameType() == PegasusShared.GameType.GT_RANKED) && (GameMgr.Get().GetFormatType() != PegasusShared.FormatType.FT_UNKNOWN))
+                            {
+                                var currentMedal = RankMgr.Get()?.GetLocalPlayerMedalInfo()?.GetCurrentMedal(GameMgr.Get().GetFormatType());
+                                if (currentMedal != null)
+                                {
+                                    gameRank = Utils.RankIdxToString(currentMedal.starLevel);
+                                    gameRank = (gameRank == "传说") ? "传说" + currentMedal.legendIndex.ToString() : (currentMedal.earnedStars > 0 ? gameRank + "-" + currentMedal.earnedStars.ToString() : "-");
+                                }
+                            }
                             finalResult = $"{String.Join("<br />", DateTime.Now.ToString().Split(' '))},{finalResult},{gameRank},{gameType},{Utils.CacheLastOpponentFullName},";
-                            finalResult += $"High:{Utils.CacheLastOpponentAccountID.High}+Low:{Utils.CacheLastOpponentAccountID.Low} => 已举报";
+                            finalResult += $"High:{Utils.CacheLastOpponentAccountID.High}+Low:{Utils.CacheLastOpponentAccountID.Low}";
+                            if (isAutoReportEnable.Value)
+                            {
+                                finalResult += " => 已举报";
+                            }
                             System.IO.File.AppendAllText(System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log"), finalResult + "\n");
                             Utils.CacheLastOpponentAccountID = null;
                         }
@@ -2177,6 +2202,31 @@ namespace HsMod
                 try
                 {
                     __instance?.SetCardId(cardId);
+
+                    //EntityDef entityDef = DefLoader.Get().GetEntityDef(cardId);
+                    //if (entityDef.GetTag(GAME_TAG.EMOTECHARACTER) > 0)
+                    //{
+                    //    GameState gameState = GameState.Get();
+                    //    if (gameState == null)
+                    //    {
+                    //        return;
+                    //    }
+                    //    int entityId = gameState.GetPlayerBySide(Player.Side.FRIENDLY).GetEntityId();
+                    //    int tag = gameState.GetEntity(entityId).GetTag(GAME_TAG.HERO_ENTITY);
+                    //    gameState.GetEntity(tag).SetTag(GAME_TAG.EMOTECHARACTER, entityDef.GetTag(GAME_TAG.EMOTECHARACTER));
+                    //}
+                    //if (entityDef.GetTag(GAME_TAG.CORNER_REPLACEMENT_TYPE) > 0)
+                    //{
+                    //    GameState gameState2 = GameState.Get();
+                    //    if (gameState2 == null)
+                    //    {
+                    //        return;
+                    //    }
+                    //    int entityId2 = gameState2.GetPlayerBySide(Player.Side.FRIENDLY).GetEntityId();
+                    //    gameState2.GetEntity(entityId2).SetTag(GAME_TAG.CORNER_REPLACEMENT_TYPE, entityDef.GetTag(GAME_TAG.CORNER_REPLACEMENT_TYPE));
+                    //    new CornerSpellReplacementManager(false).UpdateCornerReplacements(CornerReplacementSpellType.NONE, CornerReplacementSpellType.NONE);
+                    //}
+
                     __instance?.SetRealTimePremium(__instance.GetPremiumType());
                 }
                 catch (Exception ex)

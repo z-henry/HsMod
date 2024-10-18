@@ -2,6 +2,8 @@
 
 **H**earth**s**tone **Mod**ify Based on BepInEx 基于BepInEx的炉石修改，插件源代码位于[github.com/Pik-4/HsMod](https://github.com/Pik-4/HsMod)，插件不会收集您的任何信息；项目遵循`AGPL-3.0`，仅用作学习研究。
 
+**警告：中国大陆地区的炉石客户端默认启动了反作弊SDK，插件会尝试屏蔽相关反作弊功能，但无法保证您的账号安全。**
+
 ### 已实现的功能
 
 1. 支持齿轮快慢8倍速（设置中允许扩展到快慢32倍）
@@ -56,7 +58,8 @@
 50. 支持接收炉石启动参数，如指定分辨率大小等。
 51. 支持Webshell，路径为/shell。需要在设置中开启，目前中文显示可能存在乱码。
 52. 允许通过Web读取本地文件，即解析静态页面。该功能尚在开发中，目前以`Hearthstone\website`作为根目录。
-53. 允许解除套牌识别限制，以开启万宁炉石。
+53. ~~允许解除套牌识别限制，以开启万宁炉石。~~已被暴雪修复。
+54. 尝试禁用反作弊。
 
 ### 安装说明
 
@@ -230,13 +233,13 @@ Version = 3
 VerifyWebCredentials = "VerifyWebCredentials"
 ClientCheck = 0
 Env.Override = 1
-Env = cn.actual.battle.net
+Env = us.actual.battle.net
 ```
 
 一些token获取链接
 
 ```url
-https://www.battlenet.com.cn/login/zh-cn/?app=wtcg
+https://account.battlenet.com.cn/login/zh-cn/?app=wtcg
 https://tw.battle.net/login/zh/?app=wtcg
 https://kr.battle.net/login/zh/?app=wtcg
 https://us.battle.net/login/en/?app=wtcg
@@ -244,6 +247,8 @@ https://eu.battle.net/login/en/?app=wtcg
 ```
 
 在启用插件后，支持`./Hearthstone.exe VerifyWebCredentials` 命令启动炉石（~~但需要有client.config文件~~，现在不需要了！）。
+
+注意：中国的`Env`参数为`cn.actual.battlenet.com.cn`。
 
 ### TODO
 
