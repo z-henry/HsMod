@@ -9,8 +9,21 @@ namespace HsMod
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
-    {
-        private void Awake()
+	{
+		private void OnGUI()
+		{
+			if (UtilsArgu.Instance.Exists("hsunitid"))
+				GUILayout.Label(new GUIContent(UtilsArgu.Instance.Single("hsunitid")), new GUILayoutOption[]
+				{
+					GUILayout.Width(200f)
+				});
+			if (isTimeGearEnable.Value == true)
+				GUILayout.Label(new GUIContent($"Gear:{timeGear.Value}X"), new GUILayoutOption[]
+				{
+					GUILayout.Width(200f)
+				});
+		}
+		private void Awake()
         {
             // 清除炉石缓存，暂不设置清空判断条件
             if (true == true)

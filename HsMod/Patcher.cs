@@ -1399,10 +1399,30 @@ namespace HsMod
                 return list;
             }
 
-            //快速战斗 - 理论上可以用于所有模式 现只应用于酒馆战旗或佣兵战纪的ai
-            [HarmonyReversePatch]
+			//快速战斗 - 理论上可以用于所有模式 现只应用于酒馆战旗或佣兵战纪的ai
+// 			[HarmonyPrefix]
+// 			[HarmonyPatch(typeof(PowerProcessor), "NotifyOfFriendlyPlayedCard")]
+// 			public static bool Prefix_NotifyOfFriendlyPlayedCard(PowerProcessor __instance)
+// 			{
+// 					var currentTaskListField = typeof(PowerProcessor).GetField("m_currentTaskList", BindingFlags.NonPublic | BindingFlags.Instance);
+// 				PowerTaskList currentTaskList = (PowerTaskList)currentTaskListField.GetValue(__instance);
+//                 if (currentTaskList.IsStartOfBlock())
+//                 {
+//                     Network.HistBlockStart blockStart = currentTaskList.GetBlockStart();
+//                     Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"NotifyOfFriendlyPlayedCard {blockStart.BlockType.ToString()}");
+//                 }
+//                 else
+//                 {
+// 
+// 					Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"NotifyOfFriendlyPlayedCard ----");
+// 				}
+// 
+// 				return true;
+// 			}
+
+			[HarmonyReversePatch]
             [HarmonyPatch(typeof(SpellController), "OnProcessTaskList")]
-            [MethodImpl(MethodImplOptions.NoInlining)]
+			[MethodImpl(MethodImplOptions.NoInlining)]
             public static void AttackSpellControllerBase(AttackSpellController instance) {; }
             [HarmonyPrefix]
             [HarmonyPatch(typeof(AttackSpellController), "OnProcessTaskList")]
@@ -1411,11 +1431,11 @@ namespace HsMod
                 if (ConfigValue.Get().IsQuickModeEnableValue)
                 {
                     AttackSpellControllerBase(__instance);
-                    return false;
-                }
-                else return true;
-            }
-            [HarmonyReversePatch]
+					return false;
+				}
+				else return true;
+			}
+			[HarmonyReversePatch]
             [HarmonyPatch(typeof(SpellController), "OnProcessTaskList")]
             [MethodImpl(MethodImplOptions.NoInlining)]
             public static void DeathSpellControllerBase(DeathSpellController instance) {; }
@@ -1827,8 +1847,19 @@ namespace HsMod
                             {
                                 finalResult += " => 已举报";
                             }
-                            System.IO.File.AppendAllText(System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log"), finalResult + "\n");
-                            Utils.CacheLastOpponentAccountID = null;
+							string filePath = System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+
+							if (!System.IO.File.Exists(filePath))
+							{
+								// 如果文件不存在，可以创建文件并写入初始内容
+								System.IO.File.WriteAllText(filePath, finalResult + "\n");
+							}
+							else
+							{
+								// 如果文件已存在，则追加内容
+								System.IO.File.AppendAllText(filePath, finalResult + "\n");
+							}
+							Utils.CacheLastOpponentAccountID = null;
                         }
                     }
                 }
