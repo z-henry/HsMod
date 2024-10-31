@@ -1847,16 +1847,23 @@ namespace HsMod
                             {
                                 finalResult += " => 已举报";
                             }
-							string filePath = System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+							string directoryPath = System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID);
+							string filePath = System.IO.Path.Combine(directoryPath, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+
+							// 检查目录是否存在，如果不存在则创建
+							if (!System.IO.Directory.Exists(directoryPath))
+							{
+								System.IO.Directory.CreateDirectory(directoryPath);
+							}
 
 							if (!System.IO.File.Exists(filePath))
 							{
-								// 如果文件不存在，可以创建文件并写入初始内容
+								// 如果文件不存在，创建并写入初始内容
 								System.IO.File.WriteAllText(filePath, finalResult + "\n");
 							}
 							else
 							{
-								// 如果文件已存在，则追加内容
+								// 如果文件已存在，追加内容
 								System.IO.File.AppendAllText(filePath, finalResult + "\n");
 							}
 							Utils.CacheLastOpponentAccountID = null;
