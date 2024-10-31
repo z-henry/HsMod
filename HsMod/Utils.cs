@@ -1,29 +1,458 @@
-using System.Net;
+using BepInEx.Logging;
+using PegasusUtil;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using static HsMod.PluginConfig;
+
+namespace HsMod
+{
+    public class Utils
+    {
+        public enum CardState
+        {
+            [Description("默认（不做修改）")]
+            Default,
+            [Description("仅友方有效")]
+            OnlyMy,
+            [Description("全部生效")]
+            All,
+            [Description("禁用特效")]
+            Disabled
+        }
+        //public enum QuickMode
+        //{
+        //    [Description("默认（禁用）")]
+        //    Default,
+        //    [Description("酒馆战棋")]
+        //    Battlegrounds,
+        //    [Description("佣兵战纪")]
+        //    Mercenaries,
+        //    [Description("全部模式")]
+        //    AllMode,
+        //    [Description("禁用")]
+        //    Disabled
+        //}
+        public enum SkinType
+        {
+            [Description("卡背")]
+            CARDBACK,
+            [Description("卡牌")]
+            CARD,
+            [Description("硬币")]
+            COIN,
+            [Description("英雄皮肤")]
+            HERO,
+            [Description("酒馆鲍勃")]
+            BOB,
+            [Description("酒馆终结特效")]
+            BATTLEGROUNDSFINISHER,
+            [Description("酒馆战场")]
+            BATTLEGROUNDSBOARD,
+            [Description("酒馆英雄皮肤")]
+            BATTLEGROUNDSHERO,
+            [Description("英雄技能")]
+            HEROPOWER,
+        }
+        public enum AlertPopupResponse
+        {
+            OK = AlertPopup.Response.OK,
+            CONFIRM = AlertPopup.Response.CONFIRM,
+            CANCEL = AlertPopup.Response.CANCEL,
+            YES,
+            DONOTHING
+        }
+        public enum ConfigTemplate
+        {
+            [Description("默认")]
+            DoNothing,
+            [Description("挂机")]
+            AwayFromKeyboard,
+            [Description("反挂机")]
+            AntiAwayFromKeyboard
+        }
+        public enum BuyAdventureTemplate
+        {
+            [Description("默认")]
+            DoNothing,
+            [Description("纳克萨玛斯的诅咒")]
+            BuyNAX,
+            [Description("黑石山的火焰")]
+            BuyBRM,
+            [Description("探险者协会")]
+            BuyLOE,
+            [Description("卡拉赞之夜")]
+            BuyKara
+        }
+        public enum CardRarity    // 卡牌稀有度
+        {
+            COMMON = TAG_RARITY.COMMON,
+            RARE = TAG_RARITY.RARE,
+            EPIC = TAG_RARITY.EPIC,
+            LEGENDARY = TAG_RARITY.LEGENDARY
+        }
+        public enum DevicePreset
+        {
+            Default,
+            iPad,
+            iPhone,
+            Phone,
+            Tablet,
+            HuaweiPhone,
+            Custom
+        }
+
+
+        public class CardCount
+        {
+            public int legendary = 0;
+            public int epic = 0;
+            public int rare = 0;
+            public int common = 0;
+            public int total = 0;
+            public int gLegendary = 0;
+            public int gEpic = 0;
+            public int gRare = 0;
+            public int gCommon = 0;
+            public int gTotal = 0;
+            public int totalDust = 0;
+        };
+
+        public struct CollectionCard
+        {
+            public string Name;
+            public int Count;
+            public TAG_RARITY Rarity;
+            public TAG_PREMIUM Premium;
+        }
+
+        public struct MercenarySkin
+        {
+            public string Name;
+            public List<int> Id;
+            public bool hasDiamond;
+            public int Diamond;
+            public int Default;
+        }
+
+        public static string CardsCount(TAG_RARITY Rarity, TAG_PREMIUM premium, int count, ref CardCount cardCount)
+        {
+            bool golden = (premium == TAG_PREMIUM.GOLDEN);
+            switch (Rarity)
+            {
+                case TAG_RARITY.COMMON:
+                    if (golden)
+                    {
+                        cardCount.gCommon += count;
+                        cardCount.gTotal += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 50;
+                        return $"<td>金色普通</td><td>{count}</td>";
+                    }
+                    else
+                    {
+                        cardCount.common += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 5;
+                        return $"<td>普通</td><td>{count}</td>";
+                    }
+                case TAG_RARITY.RARE:
+                    if (golden)
+                    {
+                        cardCount.gRare += count;
+                        cardCount.gTotal += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 100;
+                        return $"<td>金色稀有</td><td>{count}</td>";
+                    }
+                    else
+                    {
+                        cardCount.rare += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 20;
+                        return $"<td>稀有</td><td>{count}</td>";
+                    }
+                case TAG_RARITY.EPIC:
+                    if (golden)
+                    {
+                        cardCount.gEpic += count;
+                        cardCount.gTotal += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 400;
+                        return $"<td>金色史诗</td><td>{count}</td>";
+                    }
+                    else
+                    {
+                        cardCount.epic += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 100;
+                        return $"<td>史诗</td><td>{count}</td>";
+                    }
+                case TAG_RARITY.LEGENDARY:
+                    if (golden)
+                    {
+                        cardCount.gLegendary += count;
+                        cardCount.gTotal += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 1600;
+                        return $"<td>金色传说</td><td>{count}</td>";
+                    }
+                    else
+                    {
+                        cardCount.legendary += count;
+                        cardCount.total += count;
+                        cardCount.totalDust += count * 400;
+                        return $"<td>传说</td><td>{count}</td>";
+                    }
+                default:
+                    return "<td>未知</td>";
+            }
+        }
+
+        public static string RankIdxToString(int rank)
+        {
+            string text;
+            switch ((rank - 1) / 10)
+            {
+                case 0:
+                    text = "青铜";
+                    break;
+                case 1:
+                    text = "白银";
+                    break;
+                case 2:
+                    text = "黄金";
+                    break;
+                case 3:
+                    text = "铂金";
+                    break;
+                case 4:
+                    text = "钻石";
+                    break;
+                case 5:
+                    return "传说";
+                default:
+                    text = "未知";
+                    break;
+            }
+            return text + (11 - (rank - (rank - 1) / 10 * 10)).ToString();
+        }
+
+
+        public struct CardMapping
+        {
+            public int RealDbID { get; set; }
+            public int FakeDbID { get; set; }
+            public string RealCardID { get; set; }
+            public string FakeCardID { get; set; }
+            public SkinType ThisSkinType { get; set; }
+        };
+
+        public static void MyLogger(LogLevel level, object message)
+        {
+            var myLogSource = BepInEx.Logging.Logger.CreateLogSource(PluginInfo.PLUGIN_GUID + ".MyLogger");
+            myLogSource.Log(level, message);
+            BepInEx.Logging.Logger.Sources.Remove(myLogSource);
+        }
+
+        public static void TryReportOpponent()
+        {
+            List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType> subcomplaintTypes = new List<Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType>
+            {
+                Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.BATTLETAG
+            };
+
+            Blizzard.GameService.SDK.Client.Integration.BattleNet.Get().SubmitReport(Utils.CacheLastOpponentAccountID, Blizzard.GameService.SDK.Client.Integration.ReportType.ComplaintType.INAPPROPRIATE_NAME, subcomplaintTypes);
+            subcomplaintTypes.Clear();
+
+            subcomplaintTypes.Add(Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.HACKING);
+            subcomplaintTypes.Add(Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.BOTTING);
+            Blizzard.GameService.SDK.Client.Integration.BattleNet.Get().SubmitReport(Utils.CacheLastOpponentAccountID, Blizzard.GameService.SDK.Client.Integration.ReportType.ComplaintType.CHEATING, subcomplaintTypes);
+            subcomplaintTypes.Clear();
+
+            subcomplaintTypes.Add(Blizzard.GameService.SDK.Client.Integration.ReportType.SubcomplaintType.BOOSTING_DERANKING);
+            Blizzard.GameService.SDK.Client.Integration.BattleNet.Get().SubmitReport(Utils.CacheLastOpponentAccountID, Blizzard.GameService.SDK.Client.Integration.ReportType.ComplaintType.CHEATING, subcomplaintTypes);
+            subcomplaintTypes.Clear();
+
+            Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, Utils.CacheLastOpponentFullName + Utils.CacheLastOpponentAccountID.EntityId.ToString() + "已举报");
+        }
+
+        public static void TryRefundCardDisenchantCallback()
+        {
+            Network.CardSaleResult cardSaleResult = Network.Get().GetCardSaleResult();
             if (cardSaleResult.Action == Network.CardSaleResult.SaleResult.CARD_WAS_BOUGHT)
             {
                 ;
             }
-            if (cardSaleResult.Action != Network.CardSaleResult.SaleResult.CARD_WAS_SOLD)
+            else if (cardSaleResult.Action != Network.CardSaleResult.SaleResult.CARD_WAS_SOLD)
+            {
+                MyLogger(LogLevel.Warning, $"分解失败：{cardSaleResult.Action}");
+                UIStatus.Get().AddInfo("分解失败");
+            }
+            else
+            {
+                MyLogger(LogLevel.Warning, "分解成功");
+                CollectionManager.Get().OnCollectionChanged();
+            }
+        }
+
+        //毁灭吧
+        //public static void TryRuinCardDisenchant()
+        //{
+        //    int totalSell = 0;
+        //    Network network = Network.Get();
+        //    network.RegisterNetHandler(PegasusUtil.BoughtSoldCard.PacketID.ID, new Network.NetHandler(TryRefundCardDisenchantCallback), null);
+        //    foreach (var record in CollectionManager.Get().GetOwnedCards())
+        //    {
+        //        if (record != null && record.IsCraftable && (record.OwnedCount > 0))
+        //        {
+        //            CraftingManager.Get().TryGetCardSellValue(record.CardId, record.PremiumType, out int value);
+        //            network.SellCard(record.CardDbId, record.PremiumType, record.OwnedCount, value, record.OwnedCount);
+        //            totalSell += record.OwnedCount * value;
+        //        }
+        //    }
+        //    MyLogger(LogLevel.Warning, "尝试分解粉尘：" + totalSell);
+        //    UIStatus.Get().AddInfo("尝试分解粉尘：" + totalSell);
+        //}
+
+        public static void TryReadNewCards()
+        {
+            if ((SceneMgr.Get().GetMode() == SceneMgr.Mode.COLLECTIONMANAGER) || (SceneMgr.Get().GetMode() == SceneMgr.Mode.PACKOPENING))
+            {
+                foreach (var record in CollectionManager.Get().GetOwnedCards())
+                {
+                    if (record != null && record.IsNewCard)
+                    {
+                        CollectionManager.Get().MarkAllInstancesAsSeen(record.CardId, record.PremiumType);
+                    }
+                }
+            }
+            if ((SceneMgr.Get()?.GetMode() == SceneMgr.Mode.LETTUCE_COLLECTION) || (SceneMgr.Get().GetMode() == SceneMgr.Mode.LETTUCE_PACK_OPENING)) // 执行后，需要重新进入佣兵收藏
+            {
+                List<PegasusLettuce.MercenaryAcknowledgeData> m_mercenaryAcknowledgements = new List<PegasusLettuce.MercenaryAcknowledgeData>();
+                foreach (var merc in CollectionManager.Get().FindMercenaries(null, true, null, null, null).m_mercenaries)
+                {
+                    foreach (var ability in merc.m_abilityList)
+                    {
+                        if (!ability.IsAcknowledged(merc))
+                        {
+                            PegasusLettuce.MercenaryAcknowledgeData mercenaryAcknowledgeData = new PegasusLettuce.MercenaryAcknowledgeData
+                            {
+                                Type = PegasusLettuce.MercenaryAcknowledgeData.AcknowledgeType.ACKNOWLEDGE_MERC_ABILITY_ALL,
+                                AssetId = ability.ID,
+                                Acknowledged = true,
+                                MercenaryId = merc.ID
+                            };
                             //m_mercenaryAcknowledgements.Add(mercenaryAcknowledgeData);
+                            //m_mercenaryAcknowledgements.Append(mercenaryAcknowledgeData);
+                            CollectionManager.Get().MarkMercenaryAsAcknowledgedinCollection(mercenaryAcknowledgeData);
+                        }
+                    }
+                    foreach (var equipment in merc.m_equipmentList)
+                    {
+                        if (!equipment.IsAcknowledged(merc))
+                        {
+                            PegasusLettuce.MercenaryAcknowledgeData mercenaryAcknowledgeData = new PegasusLettuce.MercenaryAcknowledgeData
+                            {
+                                Type = PegasusLettuce.MercenaryAcknowledgeData.AcknowledgeType.ACKNOWLEDGE_MERC_EQUIPMENT_ALL,
+                                AssetId = equipment.ID,
+                                Acknowledged = true,
+                                MercenaryId = merc.ID
+                            };
+                            //m_mercenaryAcknowledgements.Add(mercenaryAcknowledgeData);
+                            CollectionManager.Get().MarkMercenaryAsAcknowledgedinCollection(mercenaryAcknowledgeData);
+                        }
+                    }
+
+                    foreach (var artVariation in merc.m_artVariations)
+                    {
+                        if (!artVariation.m_acknowledged)
+                        {
+                            PegasusLettuce.MercenaryAcknowledgeData mercenaryAcknowledgeData = new PegasusLettuce.MercenaryAcknowledgeData
+                            {
+                                Type = PegasusLettuce.MercenaryAcknowledgeData.AcknowledgeType.ACKNOWLEDGE_MERC_PORTRAIT_ACQUIRED,
+                                AssetId = artVariation.m_record.ID,
+                                Acknowledged = true,
+                                MercenaryId = merc.ID
+                            };
+                            //m_mercenaryAcknowledgements.Add(mercenaryAcknowledgeData);
+                            CollectionManager.Get().MarkMercenaryAsAcknowledgedinCollection(mercenaryAcknowledgeData);
+                        }
+                    }
+                }
+                Network.Get().RegisterNetHandler(PegasusLettuce.MercenariesCollectionAcknowledgeResponse.PacketID.ID, new Network.NetHandler(OnMercCollectionAcknowledgeResponse), null);
+                Network.Get().AcknowledgeMercenaryCollection(m_mercenaryAcknowledgements);
+                m_mercenaryAcknowledgements.Clear();
+            }
+
+        }
+
+        public static void OnMercCollectionAcknowledgeResponse()
+        {
+            Network.Get().RemoveNetHandler(PegasusLettuce.MercenariesCollectionAcknowledgeResponse.PacketID.ID, new Network.NetHandler(OnMercCollectionAcknowledgeResponse));
+            if (!Network.Get().AcknowledgeMercenaryCollectionResponse().Success)
+            {
+                MyLogger(LogLevel.Error, "Error acknowledging collection");
+            }
+        }
+
+
+        public static void TryRefundCardDisenchant()    //TellServerAboutWhatUserDid
+        {
             if (!isAutoRefundCardDisenchantEnable.Value)
             {
+                return;
             }
-                    CraftingManager.Get().TryGetCardSellValue(record.CardId, record.PremiumType, out int value);
-                    totalSell += record.OwnedCount * value;
+            int totalSell = 0;
+            Network network = Network.Get();
+            network.RegisterNetHandler(PegasusUtil.BoughtSoldCard.PacketID.ID, new Network.NetHandler(TryRefundCardDisenchantCallback), null);
+            foreach (var record in CollectionManager.Get().GetOwnedCards())
+            {
+                if (record != null && record.IsCraftable && record.IsRefundable && (record.OwnedCount > 0))    // 金卡和普卡会分别触发一次，但是一次性分完
+                {
+                    CraftingManager.Get().TryGetCardSellValue(record.CardId, record.PremiumType, out int sellValue);
+                    CraftingManager.Get().TryGetCardSellValue(record.CardId, TAG_PREMIUM.NORMAL, out int normalSellValue);
                     CraftingManager.Get().TryGetCardSellValue(record.CardId, TAG_PREMIUM.GOLDEN, out int goldenSellValue);
+
                     CraftingManager.Get().TryGetCardBuyValue(record.CardId, record.PremiumType, out int buyValue);
-                    CraftingManager.Get().TryGetCardSellValue(record.CardId, TAG_PREMIUM.NORMAL, out int normalValue);
-                    CraftingManager.Get().TryGetCardSellValue(record.CardId, TAG_PREMIUM.GOLDEN, out int goldenValue);
+                    CraftingManager.Get().TryGetCardBuyValue(record.CardId, TAG_PREMIUM.NORMAL, out int normalBuyValue);
+                    CraftingManager.Get().TryGetCardBuyValue(record.CardId, TAG_PREMIUM.GOLDEN, out int goldenBuyValue);
+
+
+                    int numNormalCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.NORMAL);
+                    int numGoldenCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.GOLDEN);
+                    int numSignatureCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.SIGNATURE);
+                    int numDiamondCopiesInCollection = CollectionManager.Get().GetNumCopiesInCollection(record.CardId, TAG_PREMIUM.DIAMOND);
 
                     if ((sellValue == buyValue) && (normalBuyValue == normalSellValue) && (goldenBuyValue == goldenSellValue))
                     {
-                        SignatureDisenchantCount = numSignatureCopiesInCollection,
-                        DiamondDisenchantCount = numSignatureCopiesInCollection
+                        CraftingPendingTransaction m_pendingClientTransaction = new CraftingPendingTransaction
+                        {
+                            CardID = record.CardId,
+                            Premium = record.PremiumType,
+                            NormalDisenchantCount = numNormalCopiesInCollection,
+                            GoldenDisenchantCount = numGoldenCopiesInCollection,
+                            SignatureDisenchantCount = 0,
+                            DiamondDisenchantCount = 0
+                        };
+
                         totalSell += record.OwnedCount * sellValue;
-                    value = -(normalValue * numNormalCopiesInCollection + goldenValue * numGoldenCopiesInCollection);
-                    network.CraftingTransaction(m_pendingClientTransaction, value, numNormalCopiesInCollection, numGoldenCopiesInCollection, numSignatureCopiesInCollection, numDiamondCopiesInCollection);
+                        sellValue = -(normalSellValue * numNormalCopiesInCollection + goldenSellValue * numGoldenCopiesInCollection);
+                        network.CraftingTransaction(m_pendingClientTransaction, sellValue, numNormalCopiesInCollection, numGoldenCopiesInCollection, numSignatureCopiesInCollection, numDiamondCopiesInCollection);
+                        m_pendingClientTransaction = null;
                         MyLogger(LogLevel.Warning, $"尝试分解卡牌：{record.CardId}({record.Name.ToString()})，普通{numNormalCopiesInCollection}，金卡{numGoldenCopiesInCollection}。");
                     }
+                }
+            }
+            MyLogger(LogLevel.Warning, "尝试分解粉尘：" + totalSell);
+            UIStatus.Get().AddInfo("尝试分解粉尘：" + totalSell);
+        }
+
+        public static void TryGetSafeImg()
+        {
             webPageBackImg.Value = "";
         }
 
