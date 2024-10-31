@@ -1,4 +1,4 @@
-﻿using BepInEx.Configuration;
+using BepInEx.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +9,8 @@ namespace HsMod
     public static class PluginConfig
     {
         public static ConfigEntry<bool> isPluginEnable;
+        public static ConfigEntry<string> pluginInitLanague;
+        public static ConfigEntry<Locale> pluginLanague;
         public static ConfigEntry<bool> isFakeOpenEnable;
         public static ConfigEntry<Utils.ConfigTemplate> configTemplate;
         public static ConfigEntry<bool> isTimeGearEnable;
@@ -144,7 +146,6 @@ namespace HsMod
             public static string hsMatchLogPath = "";
             public static int width = -1;
             public static int height = -1;
-            public static string GlobalHSUnitID = "";
         }
 
         public static long timeKeeper = DateTime.Now.Ticks;
@@ -154,130 +155,143 @@ namespace HsMod
         public static void ConfigBind(ConfigFile config)
         {
             config.Clear();
-            isPluginEnable = config.Bind("全局", "HsMod状态", false, "是否启用插件（修改该选项后建议重启炉石）");
-            configTemplate = config.Bind("全局", "设置模板", Utils.ConfigTemplate.DoNothing, "配置运行模板，当选项为DoNothing时，不修改任何配置。配置修改完成后自动替换回DoNothing");
-            isShortcutsEnable = config.Bind("全局", "快捷键状态", false, "是否启用快捷键");
-            isTimeGearEnable = config.Bind("全局", "变速齿轮状态", false, "是否启用变速齿轮");
-            timeGear = config.Bind("全局", "变速倍率", 0, new ConfigDescription("变速齿轮倍速，1和0倍率相同，负数表示变慢", new AcceptableValueRange<int>(-32, 32)));
-            isShowFPSEnable = config.Bind("全局", "显示FPS", false, "是否显示FPS信息（快捷键：左Crtl+P）");
-            targetFrameRate = config.Bind("全局", "游戏帧率", -1, new ConfigDescription("游戏帧率设置，-1表示不做修改或恢复默认值（默认值可能为30）", new AcceptableValueRange<int>(-1, 2333)));
+            pluginInitLanague = config.Bind("HsMod", "HsMod.Init.Language", "UNKNOWN", new ConfigDescription("(!!! DON'T EDIT IT, unless you know what you are doing) HsMod Init Language", null, new object[] { "Advanced" }));
 
-            isIGMMessageShow = config.Bind("优化", "游戏内消息", true, "（牌店无法打开时，可以尝试设置该选项为开启状态）是否显示游戏内消息（广告推销、削弱补丁、天梯结算信息等）");
-            isAlertPopupShow = config.Bind("优化", "弹出消息", true, "是否显示弹窗");
-            responseAlertPopup = config.Bind("优化", "弹出响应", Utils.AlertPopupResponse.DONOTHING, "在屏蔽弹出消息时，如何回应弹窗");
-            isOnApplicationFocus = config.Bind("优化", "应用焦点", true, "isOnApplicationFocus");
-            isRewardToastShow = config.Bind("优化", "结算展示", true, "是否展示结算任务、成就奖励、升级提示等（可能导致领取奖励时无提示）");
-            isAutoOpenBoxesRewardEnable = config.Bind("优化", "自动开盒", false, "是否自动打开竞技场（对决、佣兵等）结算宝箱");
-            isAutoExit = config.Bind("优化", "报错退出", false, "遇到错误是否自动退出");
-            //isAutoRestart = config.Bind("优化", "退出时重启", false, "（可能无效）遇到错误是否自动重启");
-            isShowCardLargeCount = config.Bind("优化", "收藏卡牌数量", false, "是否显示收藏卡牌数量大于等于10时的数量（选中时暂有Bug）");
-            isShowCollectionCardIdEnable = config.Bind("优化", "显示卡牌ID", false, "是否在右键选择卡牌（皮肤）时，显示并复制所选内容的CardID");
-            isBypassDeckShareCodeCheckEnable = config.Bind("优化", "卡组分享代码检测", false, "是否移除卡组分享代码检测");
-            isShowRetireForever = config.Bind("优化", "显示放弃", false, "允许在0-0时放弃套牌");
-            isIdleKickEnable = config.Bind("优化", "允许掉线", true, "（尚未测试）是否允许长时间无操作掉线（启动游戏时无法加载配置）");
+            if (pluginInitLanague.Value == "UNKNOWN")
+            {
+                pluginInitLanague.Value = LocalizationManager.GetCurrentLang();
+            }
+            /*
+             * ^(.*?)( =.*?\()(".*?")(.*?)(".*?")(,.*?,.*?)(".*?")(.*?)$
+             * \1\2LocalizationManager\.GetLangValue\("\1.lable"\)\4LocalizationManager\.GetLangValue\("\1.name"\)\6LocalizationManager\.GetLangValue\("\1.description"\)\8
+             */
+
+            isPluginEnable = config.Bind(LocalizationManager.GetLangValue("isPluginEnable.label"), LocalizationManager.GetLangValue("isPluginEnable.name"), true, LocalizationManager.GetLangValue("isPluginEnable.description"));
+            pluginLanague = config.Bind(LocalizationManager.GetLangValue("pluginLanague.label"), LocalizationManager.GetLangValue("pluginLanague.name"), LocalizationManager.StrToLocale(pluginInitLanague.Value), LocalizationManager.GetLangValue("pluginLanague.description"));
+
+            configTemplate = config.Bind(LocalizationManager.GetLangValue("configTemplate.label"), LocalizationManager.GetLangValue("configTemplate.name"), Utils.ConfigTemplate.DoNothing, LocalizationManager.GetLangValue("configTemplate.description"));
+            isShortcutsEnable = config.Bind(LocalizationManager.GetLangValue("isShortcutsEnable.label"), LocalizationManager.GetLangValue("isShortcutsEnable.name"), false, LocalizationManager.GetLangValue("isShortcutsEnable.description"));
+            isTimeGearEnable = config.Bind(LocalizationManager.GetLangValue("isTimeGearEnable.label"), LocalizationManager.GetLangValue("isTimeGearEnable.name"), false, LocalizationManager.GetLangValue("isTimeGearEnable.description"));
+            timeGear = config.Bind(LocalizationManager.GetLangValue("timeGear.label"), LocalizationManager.GetLangValue("timeGear.name"), 0, new ConfigDescription(LocalizationManager.GetLangValue("timeGear.description"), new AcceptableValueRange<int>(-32, 32)));
+            isShowFPSEnable = config.Bind(LocalizationManager.GetLangValue("isShowFPSEnable.label"), LocalizationManager.GetLangValue("isShowFPSEnable.name"), false, LocalizationManager.GetLangValue("isShowFPSEnable.description"));
+            targetFrameRate = config.Bind(LocalizationManager.GetLangValue("targetFrameRate.label"), LocalizationManager.GetLangValue("targetFrameRate.name"), -1, new ConfigDescription(LocalizationManager.GetLangValue("targetFrameRate.description"), new AcceptableValueRange<int>(-1, 2333)));
+
+            isIGMMessageShow = config.Bind(LocalizationManager.GetLangValue("isIGMMessageShow.label"), LocalizationManager.GetLangValue("isIGMMessageShow.name"), true, LocalizationManager.GetLangValue("isIGMMessageShow.description"));
+            isAlertPopupShow = config.Bind(LocalizationManager.GetLangValue("isAlertPopupShow.label"), LocalizationManager.GetLangValue("isAlertPopupShow.name"), true, LocalizationManager.GetLangValue("isAlertPopupShow.description"));
+            responseAlertPopup = config.Bind(LocalizationManager.GetLangValue("responseAlertPopup.label"), LocalizationManager.GetLangValue("responseAlertPopup.name"), Utils.AlertPopupResponse.DONOTHING, LocalizationManager.GetLangValue("responseAlertPopup.description"));
+            isOnApplicationFocus = config.Bind(LocalizationManager.GetLangValue("isOnApplicationFocus.label"), LocalizationManager.GetLangValue("isOnApplicationFocus.name"), true, LocalizationManager.GetLangValue("isOnApplicationFocus.description"));
+            isRewardToastShow = config.Bind(LocalizationManager.GetLangValue("isRewardToastShow.label"), LocalizationManager.GetLangValue("isRewardToastShow.name"), true, LocalizationManager.GetLangValue("isRewardToastShow.description"));
+            isAutoOpenBoxesRewardEnable = config.Bind(LocalizationManager.GetLangValue("isAutoOpenBoxesRewardEnable.label"), LocalizationManager.GetLangValue("isAutoOpenBoxesRewardEnable.name"), false, LocalizationManager.GetLangValue("isAutoOpenBoxesRewardEnable.description"));
+            isAutoExit = config.Bind(LocalizationManager.GetLangValue("isAutoExit.label"), LocalizationManager.GetLangValue("isAutoExit.name"), false, LocalizationManager.GetLangValue("isAutoExit.description"));
+            //isAutoRestart = config.Bind(LocalizationManager.GetLangValue("//isAutoRestart.label"), LocalizationManager.GetLangValue("//isAutoRestart.name"), false, LocalizationManager.GetLangValue("//isAutoRestart.description"));
+            isShowCardLargeCount = config.Bind(LocalizationManager.GetLangValue("isShowCardLargeCount.label"), LocalizationManager.GetLangValue("isShowCardLargeCount.name"), false, LocalizationManager.GetLangValue("isShowCardLargeCount.description"));
+            isShowCollectionCardIdEnable = config.Bind(LocalizationManager.GetLangValue("isShowCollectionCardIdEnable.label"), LocalizationManager.GetLangValue("isShowCollectionCardIdEnable.name"), false, LocalizationManager.GetLangValue("isShowCollectionCardIdEnable.description"));
+            isBypassDeckShareCodeCheckEnable = config.Bind(LocalizationManager.GetLangValue("isBypassDeckShareCodeCheckEnable.label"), LocalizationManager.GetLangValue("isBypassDeckShareCodeCheckEnable.name"), false, LocalizationManager.GetLangValue("isBypassDeckShareCodeCheckEnable.description"));
+            isShowRetireForever = config.Bind(LocalizationManager.GetLangValue("isShowRetireForever.label"), LocalizationManager.GetLangValue("isShowRetireForever.name"), false, LocalizationManager.GetLangValue("isShowRetireForever.description"));
+            isIdleKickEnable = config.Bind(LocalizationManager.GetLangValue("isIdleKickEnable.label"), LocalizationManager.GetLangValue("isIdleKickEnable.name"), true, LocalizationManager.GetLangValue("isIdleKickEnable.description"));
 
 
-            isQuickPackOpeningEnable = config.Bind("开包", "开包加速", false, "开包加速，使用空格开包时直接展示结果");
-            isAutoPackOpeningEnable = config.Bind("开包", "自动开包", false, "（慎用，有BUG！）开完全部卡包，不区分卡包品类（基于开包加速）");
-            isAutoRefundCardDisenchantEnable = config.Bind("开包", "自动分解", false, "是否在开包时自动分解全额反尘的卡");
+            isQuickPackOpeningEnable = config.Bind(LocalizationManager.GetLangValue("isQuickPackOpeningEnable.label"), LocalizationManager.GetLangValue("isQuickPackOpeningEnable.name"), false, LocalizationManager.GetLangValue("isQuickPackOpeningEnable.description"));
+            isAutoPackOpeningEnable = config.Bind(LocalizationManager.GetLangValue("isAutoPackOpeningEnable.label"), LocalizationManager.GetLangValue("isAutoPackOpeningEnable.name"), false, LocalizationManager.GetLangValue("isAutoPackOpeningEnable.description"));
+            isAutoRefundCardDisenchantEnable = config.Bind(LocalizationManager.GetLangValue("isAutoRefundCardDisenchantEnable.label"), LocalizationManager.GetLangValue("isAutoRefundCardDisenchantEnable.name"), false, LocalizationManager.GetLangValue("isAutoRefundCardDisenchantEnable.description"));
 
-            isAutoReportEnable = config.Bind("好友", "自动举报", false, "对局结束后自动举报对手昵称违规、作弊和脚本、恶意投降");
-            // isAutoReportEnable = config.Bind("好友", "自动举报", true, new ConfigDescription("对局结束后自动举报对手昵称违规、作弊和脚本、恶意投降", null, new object[] { "Advanced" }));
-            isMoveEnemyCardsEnable = config.Bind("好友", "观战展示卡牌", false, "（尚未测试）在Ob中展示(旋转)对手手中的牌");
+            isAutoReportEnable = config.Bind(LocalizationManager.GetLangValue("isAutoReportEnable.label"), LocalizationManager.GetLangValue("isAutoReportEnable.name"), false, LocalizationManager.GetLangValue("isAutoReportEnable.description"));
+            // isAutoReportEnable = config.Bind(LocalizationManager.GetLangValue("// isAutoReportEnable.label"), LocalizationManager.GetLangValue("// isAutoReportEnable.name"), true, new ConfigDescription(LocalizationManager.GetLangValue("// isAutoReportEnable.description"), null, new object[] { "Advanced" }));
+            isMoveEnemyCardsEnable = config.Bind(LocalizationManager.GetLangValue("isMoveEnemyCardsEnable.label"), LocalizationManager.GetLangValue("isMoveEnemyCardsEnable.name"), false, LocalizationManager.GetLangValue("isMoveEnemyCardsEnable.description"));
 
 
-            isQuickModeEnable = config.Bind("炉石", "快速战斗", false, "是否启用酒馆或佣兵AI快速战斗模式");
-            isFullnameShow = config.Bind("炉石", "显示全名", false, "是否显示对手战网全名；如果启用该选项，还会允许添加当前对手(启动快捷键时，也允许添加对手)。");
-            isOpponentRankInGameShow = config.Bind("炉石", "显示天梯等级", false, "是否在传说前显示对手天梯等级");
-            isCardTrackerEnable = config.Bind("炉石", "卡牌追踪", false, "推测对手卡牌，并给出提示（例如：抉择等，有概率识别错误）");
-            isCardRevealedEnable = config.Bind("炉石", "卡牌揭示", false, "以明牌方式展示已知的卡牌（有概率导致炉石自动断线重连）");
-            isSkipHeroIntro = config.Bind("炉石", "跳过英雄介绍", false, "是否跳过英雄介绍(ShouldSkipMulligan)");
-            isExtendedBMEnable = config.Bind("炉石", "表情无冷却", false, "是否允许无限制表情(延迟最低1.5s)");
-            isThinkEmotesEnable = config.Bind("炉石", "思考表情", true, "是否允许显示思考表情");
-            receiveEnemyEmoteLimit = config.Bind("炉石", "表情数量", -1, new ConfigDescription("游戏内表情数量接收限制，超过自动屏蔽对手表情，0时开局屏蔽，-1不限制（有小bug）", new AcceptableValueRange<int>(-1, 100)));
-            isOpponentGoldenCardShow = config.Bind("炉石", "对手卡牌特效", true, "是否显示对手卡牌特效(覆盖ALL配置)");
-            isSignatureCardStateEnable = config.Bind("炉石", "异画特效", true, "是否在卡牌最高特效中显示异画（仅影响卡牌最高特效）");
-            goldenCardState = config.Bind("炉石", "金卡特效", Utils.CardState.Default, "强制金卡特效");
-            maxCardState = config.Bind("炉石", "卡牌最高特效", Utils.CardState.Default, "强制卡牌最高特效特效（目前优先级：钻石、异画、金卡、普通）");
+            isQuickModeEnable = config.Bind(LocalizationManager.GetLangValue("isQuickModeEnable.label"), LocalizationManager.GetLangValue("isQuickModeEnable.name"), false, LocalizationManager.GetLangValue("isQuickModeEnable.description"));
+            isFullnameShow = config.Bind(LocalizationManager.GetLangValue("isFullnameShow.label"), LocalizationManager.GetLangValue("isFullnameShow.name"), false, LocalizationManager.GetLangValue("isFullnameShow.description"));
+            isOpponentRankInGameShow = config.Bind(LocalizationManager.GetLangValue("isOpponentRankInGameShow.label"), LocalizationManager.GetLangValue("isOpponentRankInGameShow.name"), false, LocalizationManager.GetLangValue("isOpponentRankInGameShow.description"));
+            isCardTrackerEnable = config.Bind(LocalizationManager.GetLangValue("isCardTrackerEnable.label"), LocalizationManager.GetLangValue("isCardTrackerEnable.name"), false, LocalizationManager.GetLangValue("isCardTrackerEnable.description"));
+            isCardRevealedEnable = config.Bind(LocalizationManager.GetLangValue("isCardRevealedEnable.label"), LocalizationManager.GetLangValue("isCardRevealedEnable.name"), false, LocalizationManager.GetLangValue("isCardRevealedEnable.description"));
+            isSkipHeroIntro = config.Bind(LocalizationManager.GetLangValue("isSkipHeroIntro.label"), LocalizationManager.GetLangValue("isSkipHeroIntro.name"), false, LocalizationManager.GetLangValue("isSkipHeroIntro.description"));
+            isExtendedBMEnable = config.Bind(LocalizationManager.GetLangValue("isExtendedBMEnable.label"), LocalizationManager.GetLangValue("isExtendedBMEnable.name"), false, LocalizationManager.GetLangValue("isExtendedBMEnable.description"));
+            isThinkEmotesEnable = config.Bind(LocalizationManager.GetLangValue("isThinkEmotesEnable.label"), LocalizationManager.GetLangValue("isThinkEmotesEnable.name"), true, LocalizationManager.GetLangValue("isThinkEmotesEnable.description"));
+            receiveEnemyEmoteLimit = config.Bind(LocalizationManager.GetLangValue("receiveEnemyEmoteLimit.label"), LocalizationManager.GetLangValue("receiveEnemyEmoteLimit.name"), -1, new ConfigDescription(LocalizationManager.GetLangValue("receiveEnemyEmoteLimit.description"), new AcceptableValueRange<int>(-1, 100)));
+            isOpponentGoldenCardShow = config.Bind(LocalizationManager.GetLangValue("isOpponentGoldenCardShow.label"), LocalizationManager.GetLangValue("isOpponentGoldenCardShow.name"), true, LocalizationManager.GetLangValue("isOpponentGoldenCardShow.description"));
+            isSignatureCardStateEnable = config.Bind(LocalizationManager.GetLangValue("isSignatureCardStateEnable.label"), LocalizationManager.GetLangValue("isSignatureCardStateEnable.name"), true, LocalizationManager.GetLangValue("isSignatureCardStateEnable.description"));
+            goldenCardState = config.Bind(LocalizationManager.GetLangValue("goldenCardState.label"), LocalizationManager.GetLangValue("goldenCardState.name"), Utils.CardState.Default, LocalizationManager.GetLangValue("goldenCardState.description"));
+            maxCardState = config.Bind(LocalizationManager.GetLangValue("maxCardState.label"), LocalizationManager.GetLangValue("maxCardState.name"), Utils.CardState.Default, LocalizationManager.GetLangValue("maxCardState.description"));
 
-            isAutoRecvMercenaryRewardEnable = config.Bind("佣兵", "自动领奖", false, "是否自动领取佣兵佣兵奖励（屏蔽宝箱）");
-            isMercenaryBattleZoom = config.Bind("佣兵", "允许缩放", true, "（可能存在BUG）是否允许佣兵战斗时缩放画面");
-            mercenaryDiamondCardState = config.Bind("佣兵", "钻石皮肤替换", Utils.CardState.Default, "如果可以，是否替换成钻石皮肤（优先级低于炉石-卡牌最高特效）");
-            randomMercenarySkinEnable = config.Bind("佣兵", "随机皮肤", Utils.CardState.Default, "随机皮肤（不包含钻皮且炉石-钻石卡特效值不能为disabled）");
+            isAutoRecvMercenaryRewardEnable = config.Bind(LocalizationManager.GetLangValue("isAutoRecvMercenaryRewardEnable.label"), LocalizationManager.GetLangValue("isAutoRecvMercenaryRewardEnable.name"), false, LocalizationManager.GetLangValue("isAutoRecvMercenaryRewardEnable.description"));
+            isMercenaryBattleZoom = config.Bind(LocalizationManager.GetLangValue("isMercenaryBattleZoom.label"), LocalizationManager.GetLangValue("isMercenaryBattleZoom.name"), true, LocalizationManager.GetLangValue("isMercenaryBattleZoom.description"));
+            mercenaryDiamondCardState = config.Bind(LocalizationManager.GetLangValue("mercenaryDiamondCardState.label"), LocalizationManager.GetLangValue("mercenaryDiamondCardState.name"), Utils.CardState.Default, LocalizationManager.GetLangValue("mercenaryDiamondCardState.description"));
+            randomMercenarySkinEnable = config.Bind(LocalizationManager.GetLangValue("randomMercenarySkinEnable.label"), LocalizationManager.GetLangValue("randomMercenarySkinEnable.name"), Utils.CardState.Default, LocalizationManager.GetLangValue("randomMercenarySkinEnable.description"));
 
-            isShutUpBobEnable = config.Bind("酒馆", "沉默鲍勃", false, "是否让鲍勃闭嘴");
-            isBgsGoldenEnable = config.Bind("酒馆", "酒馆镀金", false, "（测试，需要在炉石卡牌特效开启金卡特效）是否镀金酒馆。该镀金不会镀金随从和任务线。");
+            isShutUpBobEnable = config.Bind(LocalizationManager.GetLangValue("isShutUpBobEnable.label"), LocalizationManager.GetLangValue("isShutUpBobEnable.name"), false, LocalizationManager.GetLangValue("isShutUpBobEnable.description"));
+            isBgsGoldenEnable = config.Bind(LocalizationManager.GetLangValue("isBgsGoldenEnable.label"), LocalizationManager.GetLangValue("isBgsGoldenEnable.name"), false, LocalizationManager.GetLangValue("isBgsGoldenEnable.description"));
             //考虑导出单独配置
-            skinCoin = config.Bind("皮肤", "硬币", -1, "幸运币的偏好ID，-1表示不做修改（游戏内模拟拔线可以实时更新）");
-            skinCardBack = config.Bind("皮肤", "卡背", -1, "卡背的偏好ID，-1表示不做修改（实时生效）");
-            skinBoard = config.Bind("皮肤", "对战面板", -1, "（测试功能，可能会在酒馆卡住），对战面板替换，-1表示不做修改）");
-            skinBgsBoard = config.Bind("皮肤", "酒馆战斗面板", -1, "酒馆战斗面板的偏好ID，-1表示不做修改");
-            skinBgsFinisher = config.Bind("皮肤", "酒馆击杀特效", -1, "酒馆击杀的偏好ID，-1表示不做修改");
-            skinBob = config.Bind("皮肤", "鲍勃", -1, "鲍勃的偏好ID，-1表示不做修改");
-            isSkinDefalutHeroEnable = config.Bind("皮肤", "默认英雄", false, "如果可以，将对战英雄皮肤都替换为默认皮肤");
-            skinHero = config.Bind("皮肤", "英雄", -1, "（慎用，非挂机不建议使用，优先级低于默认英雄。一般情况下建议从文件加载英雄皮肤，修改完后F4更新；如果再对局中，则还需要模拟拔线）英雄的偏好ID，-1表示不做修改");
-            skinOpposingHero = config.Bind("皮肤", "对手英雄", -1, "（慎用，非挂机不建议使用，优先级低于默认英雄）对手英雄的偏好ID，-1表示不做修改");
+            skinCoin = config.Bind(LocalizationManager.GetLangValue("skinCoin.label"), LocalizationManager.GetLangValue("skinCoin.name"), -1, LocalizationManager.GetLangValue("skinCoin.description"));
+            skinCardBack = config.Bind(LocalizationManager.GetLangValue("skinCardBack.label"), LocalizationManager.GetLangValue("skinCardBack.name"), -1, LocalizationManager.GetLangValue("skinCardBack.description"));
+            skinBoard = config.Bind(LocalizationManager.GetLangValue("skinBoard.label"), LocalizationManager.GetLangValue("skinBoard.name"), -1, LocalizationManager.GetLangValue("skinBoard.description"));
+            skinBgsBoard = config.Bind(LocalizationManager.GetLangValue("skinBgsBoard.label"), LocalizationManager.GetLangValue("skinBgsBoard.name"), -1, LocalizationManager.GetLangValue("skinBgsBoard.description"));
+            skinBgsFinisher = config.Bind(LocalizationManager.GetLangValue("skinBgsFinisher.label"), LocalizationManager.GetLangValue("skinBgsFinisher.name"), -1, LocalizationManager.GetLangValue("skinBgsFinisher.description"));
+            skinBob = config.Bind(LocalizationManager.GetLangValue("skinBob.label"), LocalizationManager.GetLangValue("skinBob.name"), -1, LocalizationManager.GetLangValue("skinBob.description"));
+            isSkinDefalutHeroEnable = config.Bind(LocalizationManager.GetLangValue("isSkinDefalutHeroEnable.label"), LocalizationManager.GetLangValue("isSkinDefalutHeroEnable.name"), false, LocalizationManager.GetLangValue("isSkinDefalutHeroEnable.description"));
+            skinHero = config.Bind(LocalizationManager.GetLangValue("skinHero.label"), LocalizationManager.GetLangValue("skinHero.name"), -1, LocalizationManager.GetLangValue("skinHero.description"));
+            skinOpposingHero = config.Bind(LocalizationManager.GetLangValue("skinOpposingHero.label"), LocalizationManager.GetLangValue("skinOpposingHero.name"), -1, LocalizationManager.GetLangValue("skinOpposingHero.description"));
 
-            keyTimeGearUp = config.Bind("快捷键", "齿轮倍率+1", new KeyboardShortcut(KeyCode.UpArrow), "齿轮倍率增加1，默认方向上");
-            keyTimeGearDown = config.Bind("快捷键", "齿轮倍率-1", new KeyboardShortcut(KeyCode.DownArrow), "齿轮倍率减少1，默认方向下");
-            keyTimeGearDefault = config.Bind("快捷键", "齿轮倍率归零", new KeyboardShortcut(KeyCode.LeftArrow), "恢复默认齿轮倍率，默认方向左");
-            keyTimeGearMax = config.Bind("快捷键", "齿轮倍率最大", new KeyboardShortcut(KeyCode.RightArrow), "齿轮倍率小于4时变为4，大于4时变为8，默认方向右");
-            keySimulateDisconnect = config.Bind("快捷键", "模拟拔线", new KeyboardShortcut(KeyCode.D, KeyCode.LeftControl), "模拟掉线重连，注意需要禁用报错退出并允许弹出消息，默认左Ctrl+D");
-            keyCopyBattleTag = config.Bind("快捷键", "复制对手战网标签", new KeyboardShortcut(KeyCode.C, KeyCode.LeftControl), "复制游戏内对手战网ID，默认左Ctrl+C");
-            keyCopySelectBattleTag = config.Bind("快捷键", "复制所选对手战网标签", new KeyboardShortcut(KeyCode.Mouse0), "复制酒馆内所选对手战网ID，默认鼠标左键");
-            keyConcede = config.Bind("快捷键", "投降", new KeyboardShortcut(KeyCode.Space, KeyCode.LeftControl), "投降，默认左Ctrl+空格");
-            keyContinueMulligan = config.Bind("快捷键", "结束回合", new KeyboardShortcut(KeyCode.Space), "结束回合或替换卡牌确认，默认空格");
-            keySquelch = config.Bind("快捷键", "沉默对手", new KeyboardShortcut(KeyCode.Q, KeyCode.LeftControl), "屏蔽你对手的表情，默认左Ctrl+Q");
-            keySoundMute = config.Bind("快捷键", "静音/恢复音量", new KeyboardShortcut(KeyCode.S, KeyCode.LeftControl), "静音/恢复音量，默认左Ctrl+S");
-            keyShutUpBob = config.Bind("快捷键", "闭了，鲍勃", new KeyboardShortcut(KeyCode.B, KeyCode.LeftControl), "禁用/恢复鲍勃语音，默认左Ctrl+B");
-            keyRefund = config.Bind("快捷键", "一键全额分解", new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl), "一键分解全额分解的卡牌（仅在开包界面与收藏界面有效），默认左Ctrl+Z");
-            //keyRuin = config.Bind("快捷键", "毁灭吧，赶紧的", new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), "一键退坑，默认左Ctrl+R");
-            keyReadNewCards = config.Bind("快捷键", "朕，已阅！", new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), "消除所有新！标记（仅在开包界面与收藏界面有效；佣兵模式（有bug，重启后失效）下，执行后可能需要重新进入收藏），默认左Ctrl+R");
-            keyShowFPS = config.Bind("快捷键", "显示/隐藏帧率", new KeyboardShortcut(KeyCode.P, KeyCode.LeftControl), "展示或隐藏游戏帧率信息，默认左Ctrl+P");
+            keyTimeGearUp = config.Bind(LocalizationManager.GetLangValue("keyTimeGearUp.label"), LocalizationManager.GetLangValue("keyTimeGearUp.name"), new KeyboardShortcut(KeyCode.UpArrow), LocalizationManager.GetLangValue("keyTimeGearUp.description"));
+            keyTimeGearDown = config.Bind(LocalizationManager.GetLangValue("keyTimeGearDown.label"), LocalizationManager.GetLangValue("keyTimeGearDown.name"), new KeyboardShortcut(KeyCode.DownArrow), LocalizationManager.GetLangValue("keyTimeGearDown.description"));
+            keyTimeGearDefault = config.Bind(LocalizationManager.GetLangValue("keyTimeGearDefault.label"), LocalizationManager.GetLangValue("keyTimeGearDefault.name"), new KeyboardShortcut(KeyCode.LeftArrow), LocalizationManager.GetLangValue("keyTimeGearDefault.description"));
+            keyTimeGearMax = config.Bind(LocalizationManager.GetLangValue("keyTimeGearMax.label"), LocalizationManager.GetLangValue("keyTimeGearMax.name"), new KeyboardShortcut(KeyCode.RightArrow), LocalizationManager.GetLangValue("keyTimeGearMax.description"));
+            keySimulateDisconnect = config.Bind(LocalizationManager.GetLangValue("keySimulateDisconnect.label"), LocalizationManager.GetLangValue("keySimulateDisconnect.name"), new KeyboardShortcut(KeyCode.D, KeyCode.LeftControl), LocalizationManager.GetLangValue("keySimulateDisconnect.description"));
+            keyCopyBattleTag = config.Bind(LocalizationManager.GetLangValue("keyCopyBattleTag.label"), LocalizationManager.GetLangValue("keyCopyBattleTag.name"), new KeyboardShortcut(KeyCode.C, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyCopyBattleTag.description"));
+            keyCopySelectBattleTag = config.Bind(LocalizationManager.GetLangValue("keyCopySelectBattleTag.label"), LocalizationManager.GetLangValue("keyCopySelectBattleTag.name"), new KeyboardShortcut(KeyCode.Mouse0), LocalizationManager.GetLangValue("keyCopySelectBattleTag.description"));
+            keyConcede = config.Bind(LocalizationManager.GetLangValue("keyConcede.label"), LocalizationManager.GetLangValue("keyConcede.name"), new KeyboardShortcut(KeyCode.Space, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyConcede.description"));
+            keyContinueMulligan = config.Bind(LocalizationManager.GetLangValue("keyContinueMulligan.label"), LocalizationManager.GetLangValue("keyContinueMulligan.name"), new KeyboardShortcut(KeyCode.Space), LocalizationManager.GetLangValue("keyContinueMulligan.description"));
+            keySquelch = config.Bind(LocalizationManager.GetLangValue("keySquelch.label"), LocalizationManager.GetLangValue("keySquelch.name"), new KeyboardShortcut(KeyCode.Q, KeyCode.LeftControl), LocalizationManager.GetLangValue("keySquelch.description"));
+            keySoundMute = config.Bind(LocalizationManager.GetLangValue("keySoundMute.label"), LocalizationManager.GetLangValue("keySoundMute.name"), new KeyboardShortcut(KeyCode.S, KeyCode.LeftControl), LocalizationManager.GetLangValue("keySoundMute.description"));
+            keyShutUpBob = config.Bind(LocalizationManager.GetLangValue("keyShutUpBob.label"), LocalizationManager.GetLangValue("keyShutUpBob.name"), new KeyboardShortcut(KeyCode.B, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyShutUpBob.description"));
+            keyRefund = config.Bind(LocalizationManager.GetLangValue("keyRefund.label"), LocalizationManager.GetLangValue("keyRefund.name"), new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyRefund.description"));
+            //keyRuin = config.Bind(LocalizationManager.GetLangValue("//keyRuin.label"), LocalizationManager.GetLangValue("//keyRuin.name"), new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), LocalizationManager.GetLangValue("//keyRuin.description"));
+            keyReadNewCards = config.Bind(LocalizationManager.GetLangValue("keyReadNewCards.label"), LocalizationManager.GetLangValue("keyReadNewCards.name"), new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyReadNewCards.description"));
+            keyShowFPS = config.Bind(LocalizationManager.GetLangValue("keyShowFPS.label"), LocalizationManager.GetLangValue("keyShowFPS.name"), new KeyboardShortcut(KeyCode.P, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyShowFPS.description"));
 
-            keyEmoteGreetings = config.Bind("快捷键", "问候", new KeyboardShortcut(KeyCode.Alpha1), "表情问候，默认数字键1");
-            keyEmoteWellPlayed = config.Bind("快捷键", "称赞", new KeyboardShortcut(KeyCode.Alpha2), "表情称赞，默认数字键2");
-            keyEmoteThanks = config.Bind("快捷键", "感谢", new KeyboardShortcut(KeyCode.Alpha3), "表情感谢，默认数字键3");
-            keyEmoteWow = config.Bind("快捷键", "惊叹", new KeyboardShortcut(KeyCode.Alpha4), "表情惊叹，默认数字键4");
-            keyEmoteOops = config.Bind("快捷键", "失误", new KeyboardShortcut(KeyCode.Alpha5), "表情失误，默认数字键5");
-            keyEmoteThreaten = config.Bind("快捷键", "威胁", new KeyboardShortcut(KeyCode.Alpha6), "表情威胁，默认数字键6");
+            keyEmoteGreetings = config.Bind(LocalizationManager.GetLangValue("keyEmoteGreetings.label"), LocalizationManager.GetLangValue("keyEmoteGreetings.name"), new KeyboardShortcut(KeyCode.Alpha1), LocalizationManager.GetLangValue("keyEmoteGreetings.description"));
+            keyEmoteWellPlayed = config.Bind(LocalizationManager.GetLangValue("keyEmoteWellPlayed.label"), LocalizationManager.GetLangValue("keyEmoteWellPlayed.name"), new KeyboardShortcut(KeyCode.Alpha2), LocalizationManager.GetLangValue("keyEmoteWellPlayed.description"));
+            keyEmoteThanks = config.Bind(LocalizationManager.GetLangValue("keyEmoteThanks.label"), LocalizationManager.GetLangValue("keyEmoteThanks.name"), new KeyboardShortcut(KeyCode.Alpha3), LocalizationManager.GetLangValue("keyEmoteThanks.description"));
+            keyEmoteWow = config.Bind(LocalizationManager.GetLangValue("keyEmoteWow.label"), LocalizationManager.GetLangValue("keyEmoteWow.name"), new KeyboardShortcut(KeyCode.Alpha4), LocalizationManager.GetLangValue("keyEmoteWow.description"));
+            keyEmoteOops = config.Bind(LocalizationManager.GetLangValue("keyEmoteOops.label"), LocalizationManager.GetLangValue("keyEmoteOops.name"), new KeyboardShortcut(KeyCode.Alpha5), LocalizationManager.GetLangValue("keyEmoteOops.description"));
+            keyEmoteThreaten = config.Bind(LocalizationManager.GetLangValue("keyEmoteThreaten.label"), LocalizationManager.GetLangValue("keyEmoteThreaten.name"), new KeyboardShortcut(KeyCode.Alpha6), LocalizationManager.GetLangValue("keyEmoteThreaten.description"));
 
-            hsLogPath = config.Bind("开发", "炉石日志", "", new ConfigDescription("炉石进程日志文件位置（相对于Hearthstone）", null, new object[] { "Advanced" }));
-            hsMatchLogPath = config.Bind("开发", "对局日志", "gamerecord", @"炉石对局日志文件位置（相对于Hearthstone\BepInEx\Log）");
-            autoQuitTimer = config.Bind("开发", "定时退出", (long)0, "当游戏运行x秒后（在对局结束时）自动退出，x<=0时该选项无效。");
-            isFakeOpenEnable = config.Bind("开发", "模拟开包状态", false, "是否启用模拟开包（修改该选项后建议重启炉石，启用时可能会导致卡包信息统计异常）");
-            buyAdventure = config.Bind("开发", "冒险购买", Utils.BuyAdventureTemplate.DoNothing, "（不建议购买卡拉赞）选择一个冒险进行购买尝试（有概率封号，酌情考虑使用）");
-            isKarazhanFixEnable = config.Bind("开发", "卡拉赞修复", false, "（请打完后请关闭，目前无法打序章）卡拉赞黑鸦翱翔修复，也可以用作冒险跳关。（有概率封号，酌情考虑使用）");
-            webServerPort = config.Bind("开发", "网站端口", 58744, new ConfigDescription("WebServer端口，参数最先选用命令行", new AcceptableValueRange<int>(1, 65535)));
-            webPageBackImg = config.Bind("开发", "网页背景图", "", new ConfigDescription("网页背景图片", null, new object[] { "Advanced" }));
-            isWebshellEnable = config.Bind("开发", "Webshell", false, "Webshell开关");
-            isInternalModeEnable = config.Bind("开发", "内部模式", false, "是否切换到内部模式（需要重启炉石）");
+            hsLogPath = config.Bind(LocalizationManager.GetLangValue("hsLogPath.label"), LocalizationManager.GetLangValue("hsLogPath.name"), "", new ConfigDescription(LocalizationManager.GetLangValue("hsLogPath.description"), null, new object[] { "Advanced" }));
+            hsMatchLogPath = config.Bind(LocalizationManager.GetLangValue("hsMatchLogPath.label"), LocalizationManager.GetLangValue("hsMatchLogPath.name"), @"BepInEx/HsMatch.log", LocalizationManager.GetLangValue("hsMatchLogPath.description"));
+            autoQuitTimer = config.Bind(LocalizationManager.GetLangValue("autoQuitTimer.label"), LocalizationManager.GetLangValue("autoQuitTimer.name"), (long)0, LocalizationManager.GetLangValue("autoQuitTimer.description"));
+            isFakeOpenEnable = config.Bind(LocalizationManager.GetLangValue("isFakeOpenEnable.label"), LocalizationManager.GetLangValue("isFakeOpenEnable.name"), false, LocalizationManager.GetLangValue("isFakeOpenEnable.description"));
+            buyAdventure = config.Bind(LocalizationManager.GetLangValue("buyAdventure.label"), LocalizationManager.GetLangValue("buyAdventure.name"), Utils.BuyAdventureTemplate.DoNothing, LocalizationManager.GetLangValue("buyAdventure.description"));
+            isKarazhanFixEnable = config.Bind(LocalizationManager.GetLangValue("isKarazhanFixEnable.label"), LocalizationManager.GetLangValue("isKarazhanFixEnable.name"), false, LocalizationManager.GetLangValue("isKarazhanFixEnable.description"));
+            webServerPort = config.Bind(LocalizationManager.GetLangValue("webServerPort.label"), LocalizationManager.GetLangValue("webServerPort.name"), 58744, new ConfigDescription(LocalizationManager.GetLangValue("webServerPort.description"), new AcceptableValueRange<int>(1, 65535)));
+            webPageBackImg = config.Bind(LocalizationManager.GetLangValue("webPageBackImg.label"), LocalizationManager.GetLangValue("webPageBackImg.name"), "https://imgapi.cn/cos.php", new ConfigDescription(LocalizationManager.GetLangValue("webPageBackImg.description"), null, new object[] { "Advanced" }));
+            isWebshellEnable = config.Bind(LocalizationManager.GetLangValue("isWebshellEnable.label"), LocalizationManager.GetLangValue("isWebshellEnable.name"), false, LocalizationManager.GetLangValue("isWebshellEnable.description"));
+            isInternalModeEnable = config.Bind(LocalizationManager.GetLangValue("isInternalModeEnable.label"), LocalizationManager.GetLangValue("isInternalModeEnable.name"), false, LocalizationManager.GetLangValue("isInternalModeEnable.description"));
 
-            fakeDevicePreset = config.Bind("模拟", "设备模拟模板", Utils.DevicePreset.Default, "（重启炉石后生效）模拟设备，用于领取卡包卡背");
-            fakeDeviceOs = config.Bind("模拟", "设备模拟系统", OSCategory.PC, "模拟设备操作系统，当设备模拟模板为Custom时有效。");
-            fakeDeviceScreen = config.Bind("模拟", "设备屏幕大小", ScreenCategory.PC, "模拟尺寸（屏幕类型），当设备模拟模板为Custom时有效。");
-            fakeDeviceName = config.Bind("模拟", "设备设备型号", "HsMod", "模拟设备型号，当设备模拟模板为Custom时有效。");
+            fakeDevicePreset = config.Bind(LocalizationManager.GetLangValue("fakeDevicePreset.label"), LocalizationManager.GetLangValue("fakeDevicePreset.name"), Utils.DevicePreset.Default, LocalizationManager.GetLangValue("fakeDevicePreset.description"));
+            fakeDeviceOs = config.Bind(LocalizationManager.GetLangValue("fakeDeviceOs.label"), LocalizationManager.GetLangValue("fakeDeviceOs.name"), OSCategory.PC, LocalizationManager.GetLangValue("fakeDeviceOs.description"));
+            fakeDeviceScreen = config.Bind(LocalizationManager.GetLangValue("fakeDeviceScreen.label"), LocalizationManager.GetLangValue("fakeDeviceScreen.name"), ScreenCategory.PC, LocalizationManager.GetLangValue("fakeDeviceScreen.description"));
+            fakeDeviceName = config.Bind(LocalizationManager.GetLangValue("fakeDeviceName.label"), LocalizationManager.GetLangValue("fakeDeviceName.name"), "HsMod", LocalizationManager.GetLangValue("fakeDeviceName.description"));
 
-            fakePackCount = config.Bind("模拟", "数量", 233, "模拟卡包数量");
-            fakeBoosterDbId = config.Bind("模拟", "类型", BoosterDbId.GOLDEN_CLASSIC_PACK, "模拟卡包类型。(替换卡包图标)");
-            isFakeRandomResult = config.Bind("模拟", "随机结果", false, "是否启用随机结果");
-            isFakeRandomRarity = config.Bind("模拟", "随机稀有度", false, "是否随机稀有度（基于随机结果）");
-            isFakeRandomPremium = config.Bind("模拟", "随机品质", false, "是否随机品质（基于随机结果）");
-            isFakeAtypicalRandomPremium = config.Bind("模拟", "随机其他特效", false, "随机品质中包括钻石或异画等（基于随机品质）");
-            fakeRandomRarity = config.Bind("模拟", "稀有度类型", Utils.CardRarity.LEGENDARY, "指定随机稀有度（基于随机稀有度）");
-            fakeRandomPremium = config.Bind("模拟", "品质类型", TAG_PREMIUM.GOLDEN, "指定品质（基于随机品质）");
+            fakePackCount = config.Bind(LocalizationManager.GetLangValue("fakePackCount.label"), LocalizationManager.GetLangValue("fakePackCount.name"), 233, LocalizationManager.GetLangValue("fakePackCount.description"));
+            fakeBoosterDbId = config.Bind(LocalizationManager.GetLangValue("fakeBoosterDbId.label"), LocalizationManager.GetLangValue("fakeBoosterDbId.name"), BoosterDbId.GOLDEN_CLASSIC_PACK, LocalizationManager.GetLangValue("fakeBoosterDbId.description"));
+            isFakeRandomResult = config.Bind(LocalizationManager.GetLangValue("isFakeRandomResult.label"), LocalizationManager.GetLangValue("isFakeRandomResult.name"), false, LocalizationManager.GetLangValue("isFakeRandomResult.description"));
+            isFakeRandomRarity = config.Bind(LocalizationManager.GetLangValue("isFakeRandomRarity.label"), LocalizationManager.GetLangValue("isFakeRandomRarity.name"), false, LocalizationManager.GetLangValue("isFakeRandomRarity.description"));
+            isFakeRandomPremium = config.Bind(LocalizationManager.GetLangValue("isFakeRandomPremium.label"), LocalizationManager.GetLangValue("isFakeRandomPremium.name"), false, LocalizationManager.GetLangValue("isFakeRandomPremium.description"));
+            isFakeAtypicalRandomPremium = config.Bind(LocalizationManager.GetLangValue("isFakeAtypicalRandomPremium.label"), LocalizationManager.GetLangValue("isFakeAtypicalRandomPremium.name"), false, LocalizationManager.GetLangValue("isFakeAtypicalRandomPremium.description"));
+            fakeRandomRarity = config.Bind(LocalizationManager.GetLangValue("fakeRandomRarity.label"), LocalizationManager.GetLangValue("fakeRandomRarity.name"), Utils.CardRarity.LEGENDARY, LocalizationManager.GetLangValue("fakeRandomRarity.description"));
+            fakeRandomPremium = config.Bind(LocalizationManager.GetLangValue("fakeRandomPremium.label"), LocalizationManager.GetLangValue("fakeRandomPremium.name"), TAG_PREMIUM.GOLDEN, LocalizationManager.GetLangValue("fakeRandomPremium.description"));
 
-            fakeCatchupCount = config.Bind("模拟", "追赶包卡牌数量，小于5时，数量随机", -1, new ConfigDescription("Catchup card num", null, new object[] { "Advanced" }));
-            fakeCardID1 = config.Bind("模拟", "卡牌1", 71984, new ConfigDescription("Card 1 DbID.", null, new object[] { "Advanced" }));
-            fakeCardPremium1 = config.Bind("模拟", "卡牌1品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 1 Premium.", null, new object[] { "Advanced" }));
-            fakeCardID2 = config.Bind("模拟", "卡牌2", 71945, new ConfigDescription("Card 2 DbID.", null, new object[] { "Advanced" }));
-            fakeCardPremium2 = config.Bind("模拟", "卡牌2品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 2 Premium.", null, new object[] { "Advanced" }));
-            fakeCardID3 = config.Bind("模拟", "卡牌3", 73446, new ConfigDescription("Card 3 DbID.", null, new object[] { "Advanced" }));
-            fakeCardPremium3 = config.Bind("模拟", "卡牌3品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 3 Premium.", null, new object[] { "Advanced" }));
-            fakeCardID4 = config.Bind("模拟", "卡牌4", 71781, new ConfigDescription("Card 4 DbID.", null, new object[] { "Advanced" }));
-            fakeCardPremium4 = config.Bind("模拟", "卡牌4品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 4 Premium.", null, new object[] { "Advanced" }));
-            fakeCardID5 = config.Bind("模拟", "卡牌5", 67040, new ConfigDescription("Card 5 DbID.", null, new object[] { "Advanced" }));
-            fakeCardPremium5 = config.Bind("模拟", "卡牌5品质", TAG_PREMIUM.GOLDEN, new ConfigDescription("Card 5 Premium.", null, new object[] { "Advanced" }));
+            fakeCatchupCount = config.Bind(LocalizationManager.GetLangValue("fakeCatchupCount.label"), LocalizationManager.GetLangValue("fakeCatchupCount.name"), -1, new ConfigDescription(LocalizationManager.GetLangValue("fakeCatchupCount.description"), null, new object[] { "Advanced" }));
+            fakeCardID1 = config.Bind(LocalizationManager.GetLangValue("fakeCardID1.label"), LocalizationManager.GetLangValue("fakeCardID1.name"), 71984, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardID1.description"), null, new object[] { "Advanced" }));
+            fakeCardPremium1 = config.Bind(LocalizationManager.GetLangValue("fakeCardPremium1.label"), LocalizationManager.GetLangValue("fakeCardPremium1.name"), TAG_PREMIUM.GOLDEN, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardPremium1.description"), null, new object[] { "Advanced" }));
+            fakeCardID2 = config.Bind(LocalizationManager.GetLangValue("fakeCardID2.label"), LocalizationManager.GetLangValue("fakeCardID2.name"), 71945, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardID2.description"), null, new object[] { "Advanced" }));
+            fakeCardPremium2 = config.Bind(LocalizationManager.GetLangValue("fakeCardPremium2.label"), LocalizationManager.GetLangValue("fakeCardPremium2.name"), TAG_PREMIUM.GOLDEN, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardPremium2.description"), null, new object[] { "Advanced" }));
+            fakeCardID3 = config.Bind(LocalizationManager.GetLangValue("fakeCardID3.label"), LocalizationManager.GetLangValue("fakeCardID3.name"), 73446, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardID3.description"), null, new object[] { "Advanced" }));
+            fakeCardPremium3 = config.Bind(LocalizationManager.GetLangValue("fakeCardPremium3.label"), LocalizationManager.GetLangValue("fakeCardPremium3.name"), TAG_PREMIUM.GOLDEN, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardPremium3.description"), null, new object[] { "Advanced" }));
+            fakeCardID4 = config.Bind(LocalizationManager.GetLangValue("fakeCardID4.label"), LocalizationManager.GetLangValue("fakeCardID4.name"), 71781, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardID4.description"), null, new object[] { "Advanced" }));
+            fakeCardPremium4 = config.Bind(LocalizationManager.GetLangValue("fakeCardPremium4.label"), LocalizationManager.GetLangValue("fakeCardPremium4.name"), TAG_PREMIUM.GOLDEN, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardPremium4.description"), null, new object[] { "Advanced" }));
+            fakeCardID5 = config.Bind(LocalizationManager.GetLangValue("fakeCardID5.label"), LocalizationManager.GetLangValue("fakeCardID5.name"), 67040, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardID5.description"), null, new object[] { "Advanced" }));
+            fakeCardPremium5 = config.Bind(LocalizationManager.GetLangValue("fakeCardPremium5.label"), LocalizationManager.GetLangValue("fakeCardPremium5.name"), TAG_PREMIUM.GOLDEN, new ConfigDescription(LocalizationManager.GetLangValue("fakeCardPremium5.description"), null, new object[] { "Advanced" }));
 
             InitCardsMapping();
             LoadSkinsConfigFromFile();
@@ -289,10 +303,16 @@ namespace HsMod
             if (CommandConfig.hsMatchLogPath == string.Empty) CommandConfig.hsMatchLogPath = hsMatchLogPath.Value;
             if (CommandConfig.webServerPort == -1) CommandConfig.webServerPort = webServerPort.Value;
 
+            isAutoRefundCardDisenchantEnable.Value = false;  // 自动禁用自动分解，使用时，必须手动开启
+
         }
 
         public static void ConfigValueDelegate()
         {
+            pluginLanague.SettingChanged += delegate
+            {
+                pluginInitLanague.Value = pluginLanague.Value.ToString();
+            };
             configTemplate.SettingChanged += delegate
             {
                 ConfigTemplateSettingChanged(configTemplate.Value);
@@ -340,6 +360,7 @@ namespace HsMod
                     isAutoExit.Value = true;
                     isIdleKickEnable.Value = true;
                     isQuickPackOpeningEnable.Value = true;
+                    //isAutoRefundCardDisenchantEnable.Value = true;
                     isAutoRecvMercenaryRewardEnable.Value = true;
                     isMercenaryBattleZoom.Value = false;
                     isSkipHeroIntro.Value = true;
@@ -347,7 +368,7 @@ namespace HsMod
                     receiveEnemyEmoteLimit.Value = 0;
                     isOpponentGoldenCardShow.Value = false;
                     skinCoin.Value = 1746;   // 初始幸运币
-                    //isSkinDefalutHeroEnable.Value = true;
+                    isSkinDefalutHeroEnable.Value = true;
                     mercenaryDiamondCardState.Value = Utils.CardState.Disabled;
                     randomMercenarySkinEnable.Value = Utils.CardState.Disabled;
                     goldenCardState.Value = Utils.CardState.Disabled;
@@ -365,7 +386,7 @@ namespace HsMod
                     isAutoExit.Value = false;
                     isIdleKickEnable.Value = false;
                     isQuickPackOpeningEnable.Value = true;
-                    isAutoRefundCardDisenchantEnable.Value = false;
+                    //isAutoRefundCardDisenchantEnable.Value = false;
                     isAutoRecvMercenaryRewardEnable.Value = true;
                     isMercenaryBattleZoom.Value = false;
                     isSkipHeroIntro.Value = true;
@@ -426,8 +447,9 @@ namespace HsMod
             }
         }
 
-        public static void LoadSkinsConfigFromFile(string file = "BepInEx/config/HsSkins.cfg")
+        public static void LoadSkinsConfigFromFile()
         {
+            string file = Path.Combine(BepInEx.Paths.ConfigPath, "HsSkins.cfg");
             HeroesMapping.Clear();
             if (File.Exists(file))
             {

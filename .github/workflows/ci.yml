@@ -1,0 +1,30 @@
+name: Auto Build Test
+
+on:
+  push:
+    branches: [ "bepinex5" ]
+  pull_request:
+  merge_group:
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+    - name: Restore dependencies
+      run: dotnet restore --locked-mode
+    - name: Build HsMod
+      run: dotnet build --configuration Release --no-restore
+    - name: Upload symbols
+      uses: actions/upload-artifact@v4
+      with:
+        name: HsMod.dll
+        path: HsMod/Release/HsMod.dll

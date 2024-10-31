@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using System;
 using System.Linq;
 using UnityEngine;
@@ -9,7 +9,7 @@ namespace HsMod
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
-	{
+    {
 		private void OnGUI()
 		{
 			if (UtilsArgu.Instance.Exists("hsunitid"))
@@ -23,8 +23,18 @@ namespace HsMod
 					GUILayout.Width(200f)
 				});
 		}
-		private void Awake()
+        private void Awake()
         {
+            // enable logging bepinex and unity to disk without append
+            try
+            {
+                Utils.EnableBepInExLogs();
+            }
+            catch (Exception ex)
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Error, $"{ex.Message} \n{ex.InnerException}");
+            }
+
             // 清除炉石缓存，暂不设置清空判断条件
             if (true == true)
             {
@@ -40,9 +50,9 @@ namespace HsMod
             if (hsUnitID.Length <= 0)
                 ConfigBind(base.Config);
             else
-                ConfigBind(new BepInEx.Configuration.ConfigFile(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx/config", hsUnitID, PluginInfo.PLUGIN_GUID + ".cfg"), false,
+                ConfigBind(new BepInEx.Configuration.ConfigFile(System.IO.Path.Combine(BepInEx.Paths.ConfigPath, hsUnitID, PluginInfo.PLUGIN_GUID + ".cfg"), false,
                     new BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)));
-            CommandConfig.GlobalHSUnitID = hsUnitID;
+
             if (UtilsArgu.Instance.Exists("port"))
                 if (int.TryParse(UtilsArgu.Instance.Single("port"), out int port))
                     if (port > 0 && port < 65535)
@@ -162,6 +172,7 @@ namespace HsMod
                 }
                 LoadSkinsConfigFromFile();
                 UIStatus.Get().AddInfo($"[{allPatchNum}]插件状态：" + (isPluginEnable.Value ? "运行" : "停止"));
+                LocalizationManager.GetCurrentLang();
                 InactivePlayerKicker.Get().SetShouldCheckForInactivity(isIdleKickEnable.Value);
                 WebServer.Restart();
             }

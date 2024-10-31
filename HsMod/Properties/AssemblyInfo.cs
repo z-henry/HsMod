@@ -1,11 +1,11 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("HsMod")]
-[assembly: AssemblyDescription("Hearthstone Modify Based on BepInEx")]
+[assembly: AssemblyDescription("Hearthstone Modification Based on BepInEx")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany(HsMod.PluginInfo.PLUGIN_AUTHOR)]
 [assembly: AssemblyProduct("HsMod")]

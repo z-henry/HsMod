@@ -1,11 +1,10 @@
-﻿using Blizzard.GameService.SDK.Client.Integration;
+using Blizzard.GameService.SDK.Client.Integration;
 using Blizzard.T5.Core;
 using Blizzard.T5.Core.Time;
 using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -42,6 +41,14 @@ namespace HsMod
             }
             catch (Exception ex)
             {
+                if (loadType == typeof(Patcher.PatchAntiCheat))
+                {
+                    if ((Environment.OSVersion.Platform == PlatformID.MacOSX) || (Environment.OSVersion.Platform == PlatformID.Unix))
+                    {
+                        Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "Skip Mac.");
+                        return;
+                    }
+                }
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Error, $"{loadType.Name} => {ex.Message} \n{ex.InnerException}");
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Error, "HsMod patch failed!");
                 System.Threading.Thread.Sleep(11451);
@@ -195,6 +202,7 @@ namespace HsMod
         public static void PatchAll()
         {
             LoadPatch(typeof(Patcher));
+            LoadPatch(typeof(Patcher.PatchAntiCheat));
             LoadPatch(typeof(Patcher.PatchMisc));
             LoadPatch(typeof(Patcher.PatchEmote));
             LoadPatch(typeof(Patcher.PatchIGMMessage));
@@ -256,6 +264,27 @@ namespace HsMod
     //前置Patch为harmony补丁，后置Patch为反射
     public class Patcher
     {
+
+        public class PatchAntiCheat
+        {
+            //禁用反作弊
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "OnLoginComplete")]
+            public static bool PatchAntiCheatManagerOnLoginComplete()
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
+                return false;
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "Shutdown")]
+            public static bool PatchAntiCheatManagerShutdown()
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
+                return false;
+            }
+        }
+
         public class PatchMisc
         {
             //移除分辨率限制
@@ -296,19 +325,18 @@ namespace HsMod
                     return false;
                 }
                 else return true;
-			}
+            }
+            //[HarmonyPrefix, HarmonyPatch(typeof(GraphicsManager), "UpdateFramerateSettings")]
+            //public static void PatchGraphicsManagerUpdateFramerateSettings()
+            //{
+            //    if (targetFrameRate.Value > 0)
+            //    {
+            //        Options.Get()?.SetInt(Option.GFX_TARGET_FRAME_RATE, targetFrameRate.Value); ;
+            //    }
+            //}
 
-			//[HarmonyPrefix, HarmonyPatch(typeof(GraphicsManager), "UpdateFramerateSettings")]
-			//public static void PatchGraphicsManagerUpdateFramerateSettings()
-			//{
-			//    if (targetFrameRate.Value > 0)
-			//    {
-			//        Options.Get()?.SetInt(Option.GFX_TARGET_FRAME_RATE, targetFrameRate.Value); ;
-			//    }
-			//}
-
-			//使用WebToken登录
-			[HarmonyTranspiler]
+            //使用WebToken登录
+            [HarmonyTranspiler]
             [HarmonyPatch(typeof(Hearthstone.Login.DesktopLoginTokenFetcher), "GetTokenFromTokenFetcher")]
             public static IEnumerable<CodeInstruction> PatchGetTokenFromTokenFetcher(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
             {
@@ -344,26 +372,26 @@ namespace HsMod
                     }
 
                     string configPath = "";
-                    if (System.IO.Directory.Exists(Hearthstone.Util.PlatformFilePaths.ExternalDataPath + "/Cache/"))
+                    if (System.IO.Directory.Exists(Hearthstone.Util.PlatformFilePaths.CachePath))
                     {
-                        configPath = Hearthstone.Util.PlatformFilePaths.ExternalDataPath + "/Cache/";
+                        configPath = Hearthstone.Util.PlatformFilePaths.CachePath;
                     }
-                    else if (System.IO.Directory.Exists(Hearthstone.Util.PlatformFilePaths.PersistentDataPath + "/Cache/"))
+                    //else if (System.IO.Directory.Exists(Hearthstone.Util.PlatformFilePaths.PersistentDataPath + "/Cache/"))
+                    //{
+                    //    configPath = Hearthstone.Util.PlatformFilePaths.PersistentDataPath + "/Cache/";
+                    //}
+                    else if (System.IO.Directory.Exists(BepInEx.Paths.ConfigPath))
                     {
-                        configPath = Hearthstone.Util.PlatformFilePaths.PersistentDataPath + "/Cache/";
-                    }
-                    else if (System.IO.Directory.Exists("./BepInEx/config/"))
-                    {
-                        configPath = "./BepInEx/config/";
+                        configPath = BepInEx.Paths.ConfigPath;
                     }
                     else
                     {
                         configPath = "./";
                     }
-                    path = configPath + "HsClient.config";
+                    path = System.IO.Path.Combine(configPath, "HsClient.config");
                     System.IO.File.WriteAllText(path, "[Config]\r\nVersion = 3\r\n[Aurora]\r\nVerifyWebCredentials = \"token\"\r\nClientCheck = 0\r\nEnv.Override = 1\r\nEnv = cn.actual.battlenet.com.cn\r\n");
-
                 }
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, $"client.config => {path}");
             }
             [HarmonyPostfix, HarmonyPatch(typeof(Blizzard.T5.Configuration.ConfigFile), "Load", new Type[] { typeof(string), typeof(bool) })]
             public static void PatchPostConfigFileLoad(ref string path,
@@ -381,23 +409,6 @@ namespace HsMod
                     __instance.Set("Aurora.Env", "cn.actual.battlenet.com.cn");
                 else
                     __instance.Set("Aurora.Env", __state.Substring(0, 2).ToLower() + ".actual.battle.net");
-            }
-
-            //禁用反作弊
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "OnLoginComplete")]
-            public static bool PatchAntiCheatManagerOnLoginComplete()
-            {
-                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
-                return false;
-            }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(AntiCheatSDK.AntiCheatManager), "Shutdown")]
-            public static bool PatchAntiCheatManagerShutdown()
-            {
-                Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, "AntiCheat feature is disabled.");
-                return false;
             }
 
             //禁止发送错误报告
@@ -433,7 +444,7 @@ namespace HsMod
                 return false;
             }
             [HarmonyPrefix]
-            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "get_ExceptionSubmitURL")]
+            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "ExceptionSubmitURL", MethodType.Getter)]
             public static bool PatchExceptionReporterSubmitURLGetter(ref System.Uri __result)
             {
                 __result = new Uri(string.Format("http://127.0.0.1/submit/{0}", Blizzard.BlizzardErrorMobile.ReportBuilder.Settings.m_projectID));
@@ -873,14 +884,6 @@ namespace HsMod
                 return list;
             }
 
-			//排队日志记录
-			[HarmonyPrefix]
-			[HarmonyPatch(typeof(SplashScreen), "UpdateQueueInfo")]
-			public static bool PatchUpdateQueueInfo(Network.QueueInfo queueInfo)
-			{
-                Debug.Log($"排队中，预计{queueInfo.secondsTilEnd}秒");
-				return true;
-			}
 
         }
 
@@ -1399,30 +1402,10 @@ namespace HsMod
                 return list;
             }
 
-			//快速战斗 - 理论上可以用于所有模式 现只应用于酒馆战旗或佣兵战纪的ai
-// 			[HarmonyPrefix]
-// 			[HarmonyPatch(typeof(PowerProcessor), "NotifyOfFriendlyPlayedCard")]
-// 			public static bool Prefix_NotifyOfFriendlyPlayedCard(PowerProcessor __instance)
-// 			{
-// 					var currentTaskListField = typeof(PowerProcessor).GetField("m_currentTaskList", BindingFlags.NonPublic | BindingFlags.Instance);
-// 				PowerTaskList currentTaskList = (PowerTaskList)currentTaskListField.GetValue(__instance);
-//                 if (currentTaskList.IsStartOfBlock())
-//                 {
-//                     Network.HistBlockStart blockStart = currentTaskList.GetBlockStart();
-//                     Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"NotifyOfFriendlyPlayedCard {blockStart.BlockType.ToString()}");
-//                 }
-//                 else
-//                 {
-// 
-// 					Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"NotifyOfFriendlyPlayedCard ----");
-// 				}
-// 
-// 				return true;
-// 			}
-
-			[HarmonyReversePatch]
+            //快速战斗 - 理论上可以用于所有模式 现只应用于酒馆战旗或佣兵战纪的ai
+            [HarmonyReversePatch]
             [HarmonyPatch(typeof(SpellController), "OnProcessTaskList")]
-			[MethodImpl(MethodImplOptions.NoInlining)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             public static void AttackSpellControllerBase(AttackSpellController instance) {; }
             [HarmonyPrefix]
             [HarmonyPatch(typeof(AttackSpellController), "OnProcessTaskList")]
@@ -1431,11 +1414,11 @@ namespace HsMod
                 if (ConfigValue.Get().IsQuickModeEnableValue)
                 {
                     AttackSpellControllerBase(__instance);
-					return false;
-				}
-				else return true;
-			}
-			[HarmonyReversePatch]
+                    return false;
+                }
+                else return true;
+            }
+            [HarmonyReversePatch]
             [HarmonyPatch(typeof(SpellController), "OnProcessTaskList")]
             [MethodImpl(MethodImplOptions.NoInlining)]
             public static void DeathSpellControllerBase(DeathSpellController instance) {; }
@@ -1801,7 +1784,7 @@ namespace HsMod
                         Utils.CacheRawHeroCardId = null;
                         if (!System.IO.File.Exists(CommandConfig.hsMatchLogPath))
                         {
-                            var f=System.IO.File.Create(CommandConfig.hsMatchLogPath);
+                            var f = System.IO.File.Create(CommandConfig.hsMatchLogPath);
                             f?.Close();
                         }
                         if (System.IO.File.Exists(CommandConfig.hsMatchLogPath))
@@ -1830,7 +1813,7 @@ namespace HsMod
                             }
 
                             string gameType = (GameMgr.Get().GetGameType() == PegasusShared.GameType.GT_RANKED) ? GameMgr.Get().GetFormatType().ToString() : GameMgr.Get().GetGameType().ToString();
-                          
+
                             string gameRank = "-";
                             if ((GameMgr.Get().GetGameType() == PegasusShared.GameType.GT_RANKED) && (GameMgr.Get().GetFormatType() != PegasusShared.FormatType.FT_UNKNOWN))
                             {
@@ -1847,26 +1830,8 @@ namespace HsMod
                             {
                                 finalResult += " => 已举报";
                             }
-							string directoryPath = System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID);
-							string filePath = System.IO.Path.Combine(directoryPath, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log");
-
-							// 检查目录是否存在，如果不存在则创建
-							if (!System.IO.Directory.Exists(directoryPath))
-							{
-								System.IO.Directory.CreateDirectory(directoryPath);
-							}
-
-							if (!System.IO.File.Exists(filePath))
-							{
-								// 如果文件不存在，创建并写入初始内容
-								System.IO.File.WriteAllText(filePath, finalResult + "\n");
-							}
-							else
-							{
-								// 如果文件已存在，追加内容
-								System.IO.File.AppendAllText(filePath, finalResult + "\n");
-							}
-							Utils.CacheLastOpponentAccountID = null;
+                            System.IO.File.AppendAllText(CommandConfig.hsMatchLogPath, finalResult + "\n");
+                            Utils.CacheLastOpponentAccountID = null;
                         }
                     }
                 }
@@ -2517,6 +2482,25 @@ namespace HsMod
         //移除推销;拦截削弱补丁信息
         public class PatchIGMMessage
         {
+            //排队人数
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(SplashScreen), "UpdateQueueInfo")]
+            public static void PatchSplashScreenUpdateQueueInfo(ref Network.QueueInfo queueInfo)
+            {
+                if (isIGMMessageShow.Value)
+                {
+                    UIStatus.Get()?.AddInfo(string.Concat(new string[] {
+                                "当前排队人数：",
+                                queueInfo.position.ToString(),
+                                ", 还剩",
+                                (queueInfo.secondsTilEnd / 60L).ToString(),
+                                "分钟"
+                    }), ((float)(queueInfo.secondsTilEnd)) + 3f);
+                    Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, $"当前排队人数：{queueInfo.position}，还剩{queueInfo.secondsTilEnd / 60L}分钟（{queueInfo.secondsTilEnd}秒）。");
+                }
+            }
+
+
             //拦截削弱补丁信息
             [HarmonyPostfix]
             [HarmonyPatch(typeof(CardListPopup), "Show")]

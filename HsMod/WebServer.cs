@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -111,8 +111,8 @@ namespace HsMod
                     }
                     else if (rawUrLower == "/safeimg")
                     {
-                        var safeimg = Convert.FromBase64String(WebPage.SafeImg);
-                        httpListenerContext.Response.OutputStream.Write(safeimg, 0, safeimg.Length);
+                        //var safeimg = Convert.FromBase64String(WebPage.SafeImg);
+                        //httpListenerContext.Response.OutputStream.Write(safeimg, 0, safeimg.Length);
                         httpListenerContext.Response.OutputStream.Close();
                     }
                     else
@@ -163,7 +163,7 @@ namespace HsMod
                 case "/webshell":
                     return WebPage.Webshell();
                 case "/jquery.min.js":
-                    return new StringBuilder(WebPage.jQuery);
+                    return new StringBuilder(FileManager.ReadEmbeddedFile("./WebResources/jquery.min.js"));
                 default:
                     return new StringBuilder();
             }
