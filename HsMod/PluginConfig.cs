@@ -368,7 +368,8 @@ namespace HsMod
                     receiveEnemyEmoteLimit.Value = 0;
                     isOpponentGoldenCardShow.Value = false;
                     skinCoin.Value = 1746;   // 初始幸运币
-                    isSkinDefalutHeroEnable.Value = true;
+                    isSkinDefalutHeroEnable.Value = true;// my 默认英雄皮肤
+                    isQuickModeEnable.Value = true;// my 快速模式
                     mercenaryDiamondCardState.Value = Utils.CardState.Disabled;
                     randomMercenarySkinEnable.Value = Utils.CardState.Disabled;
                     goldenCardState.Value = Utils.CardState.Disabled;
@@ -394,8 +395,9 @@ namespace HsMod
                     receiveEnemyEmoteLimit.Value = 3;
                     isOpponentGoldenCardShow.Value = true;
                     skinCoin.Value = -1;
-                    isSkinDefalutHeroEnable.Value = false;
-                    goldenCardState.Value = Utils.CardState.Default;
+					isSkinDefalutHeroEnable.Value = false;// my 默认英雄皮肤
+					isQuickModeEnable.Value = false;// my 快速模式
+					goldenCardState.Value = Utils.CardState.Default;
                     maxCardState.Value = Utils.CardState.Default;
                     mercenaryDiamondCardState.Value = Utils.CardState.Default;
                     randomMercenarySkinEnable.Value = Utils.CardState.Default;
