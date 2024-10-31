@@ -146,6 +146,7 @@ namespace HsMod
             public static string hsMatchLogPath = "";
             public static int width = -1;
             public static int height = -1;
+            public static string GlobalHSUnitID = "";
         }
 
         public static long timeKeeper = DateTime.Now.Ticks;
@@ -257,7 +258,7 @@ namespace HsMod
             keyEmoteThreaten = config.Bind(LocalizationManager.GetLangValue("keyEmoteThreaten.label"), LocalizationManager.GetLangValue("keyEmoteThreaten.name"), new KeyboardShortcut(KeyCode.Alpha6), LocalizationManager.GetLangValue("keyEmoteThreaten.description"));
 
             hsLogPath = config.Bind(LocalizationManager.GetLangValue("hsLogPath.label"), LocalizationManager.GetLangValue("hsLogPath.name"), "", new ConfigDescription(LocalizationManager.GetLangValue("hsLogPath.description"), null, new object[] { "Advanced" }));
-            hsMatchLogPath = config.Bind(LocalizationManager.GetLangValue("hsMatchLogPath.label"), LocalizationManager.GetLangValue("hsMatchLogPath.name"), @"BepInEx/HsMatch.log", LocalizationManager.GetLangValue("hsMatchLogPath.description"));
+            hsMatchLogPath = config.Bind(LocalizationManager.GetLangValue("hsMatchLogPath.label"), LocalizationManager.GetLangValue("hsMatchLogPath.name"), @"gamerecord", LocalizationManager.GetLangValue("hsMatchLogPath.description"));
             autoQuitTimer = config.Bind(LocalizationManager.GetLangValue("autoQuitTimer.label"), LocalizationManager.GetLangValue("autoQuitTimer.name"), (long)0, LocalizationManager.GetLangValue("autoQuitTimer.description"));
             isFakeOpenEnable = config.Bind(LocalizationManager.GetLangValue("isFakeOpenEnable.label"), LocalizationManager.GetLangValue("isFakeOpenEnable.name"), false, LocalizationManager.GetLangValue("isFakeOpenEnable.description"));
             buyAdventure = config.Bind(LocalizationManager.GetLangValue("buyAdventure.label"), LocalizationManager.GetLangValue("buyAdventure.name"), Utils.BuyAdventureTemplate.DoNothing, LocalizationManager.GetLangValue("buyAdventure.description"));
@@ -395,9 +396,9 @@ namespace HsMod
                     receiveEnemyEmoteLimit.Value = 3;
                     isOpponentGoldenCardShow.Value = true;
                     skinCoin.Value = -1;
-					isSkinDefalutHeroEnable.Value = false;// my 默认英雄皮肤
-					isQuickModeEnable.Value = false;// my 快速模式
-					goldenCardState.Value = Utils.CardState.Default;
+                    isSkinDefalutHeroEnable.Value = false;// my 默认英雄皮肤
+                    isQuickModeEnable.Value = false;// my 快速模式
+                    goldenCardState.Value = Utils.CardState.Default;
                     maxCardState.Value = Utils.CardState.Default;
                     mercenaryDiamondCardState.Value = Utils.CardState.Default;
                     randomMercenarySkinEnable.Value = Utils.CardState.Default;

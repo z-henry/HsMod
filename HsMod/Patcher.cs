@@ -884,6 +884,14 @@ namespace HsMod
                 return list;
             }
 
+			//排队日志记录
+			[HarmonyPrefix]
+			[HarmonyPatch(typeof(SplashScreen), "UpdateQueueInfo")]
+			public static bool PatchUpdateQueueInfo(Network.QueueInfo queueInfo)
+			{
+                Debug.Log($"排队中，预计{queueInfo.secondsTilEnd}秒");
+				return true;
+			}
 
         }
 
@@ -1830,8 +1838,26 @@ namespace HsMod
                             {
                                 finalResult += " => 已举报";
                             }
-                            System.IO.File.AppendAllText(CommandConfig.hsMatchLogPath, finalResult + "\n");
-                            Utils.CacheLastOpponentAccountID = null;
+							string directoryPath = System.IO.Path.Combine("BepinEx/Log", CommandConfig.GlobalHSUnitID);
+							string filePath = System.IO.Path.Combine(directoryPath, hsMatchLogPath.Value + "@" + DateTime.Today.ToString("yyyy-MM-dd") + ".log");
+
+							// 检查目录是否存在，如果不存在则创建
+							if (!System.IO.Directory.Exists(directoryPath))
+							{
+								System.IO.Directory.CreateDirectory(directoryPath);
+							}
+
+							if (!System.IO.File.Exists(filePath))
+							{
+								// 如果文件不存在，创建并写入初始内容
+								System.IO.File.WriteAllText(filePath, finalResult + "\n");
+							}
+							else
+							{
+								// 如果文件已存在，追加内容
+								System.IO.File.AppendAllText(filePath, finalResult + "\n");
+							}
+							Utils.CacheLastOpponentAccountID = null;
                         }
                     }
                 }
@@ -2482,25 +2508,6 @@ namespace HsMod
         //移除推销;拦截削弱补丁信息
         public class PatchIGMMessage
         {
-            //排队人数
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(SplashScreen), "UpdateQueueInfo")]
-            public static void PatchSplashScreenUpdateQueueInfo(ref Network.QueueInfo queueInfo)
-            {
-                if (isIGMMessageShow.Value)
-                {
-                    UIStatus.Get()?.AddInfo(string.Concat(new string[] {
-                                "当前排队人数：",
-                                queueInfo.position.ToString(),
-                                ", 还剩",
-                                (queueInfo.secondsTilEnd / 60L).ToString(),
-                                "分钟"
-                    }), ((float)(queueInfo.secondsTilEnd)) + 3f);
-                    Utils.MyLogger(BepInEx.Logging.LogLevel.Debug, $"当前排队人数：{queueInfo.position}，还剩{queueInfo.secondsTilEnd / 60L}分钟（{queueInfo.secondsTilEnd}秒）。");
-                }
-            }
-
-
             //拦截削弱补丁信息
             [HarmonyPostfix]
             [HarmonyPatch(typeof(CardListPopup), "Show")]
