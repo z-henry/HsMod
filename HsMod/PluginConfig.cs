@@ -19,7 +19,7 @@ namespace HsMod
         public static ConfigEntry<bool> isDynamicFpsEnable;
         public static ConfigEntry<bool> isEulaRead;
 
-        public static ConfigEntry<int> timeGear;
+        public static ConfigEntry<float> timeGear;
         public static ConfigEntry<int> receiveEnemyEmoteLimit;
 
         public static ConfigEntry<bool> isIGMMessageShow;
@@ -181,7 +181,7 @@ namespace HsMod
             configTemplate = config.Bind(LocalizationManager.GetLangValue("configTemplate.label"), LocalizationManager.GetLangValue("configTemplate.name"), Utils.ConfigTemplate.DoNothing, LocalizationManager.GetLangValue("configTemplate.description"));
             isShortcutsEnable = config.Bind(LocalizationManager.GetLangValue("isShortcutsEnable.label"), LocalizationManager.GetLangValue("isShortcutsEnable.name"), false, LocalizationManager.GetLangValue("isShortcutsEnable.description"));
             isTimeGearEnable = config.Bind(LocalizationManager.GetLangValue("isTimeGearEnable.label"), LocalizationManager.GetLangValue("isTimeGearEnable.name"), false, LocalizationManager.GetLangValue("isTimeGearEnable.description"));
-            timeGear = config.Bind(LocalizationManager.GetLangValue("timeGear.label"), LocalizationManager.GetLangValue("timeGear.name"), 0, new ConfigDescription(LocalizationManager.GetLangValue("timeGear.description"), new AcceptableValueRange<int>(-32, 32)));
+            timeGear = config.Bind(LocalizationManager.GetLangValue("timeGear.label"), LocalizationManager.GetLangValue("timeGear.name"), 0f, new ConfigDescription(LocalizationManager.GetLangValue("timeGear.description"), new AcceptableValueRange<float>(-32, 32)));
             isShowFPSEnable = config.Bind(LocalizationManager.GetLangValue("isShowFPSEnable.label"), LocalizationManager.GetLangValue("isShowFPSEnable.name"), false, LocalizationManager.GetLangValue("isShowFPSEnable.description"));
             targetFrameRate = config.Bind(LocalizationManager.GetLangValue("targetFrameRate.label"), LocalizationManager.GetLangValue("targetFrameRate.name"), -1, new ConfigDescription(LocalizationManager.GetLangValue("targetFrameRate.description"), new AcceptableValueRange<int>(-1, 2333)));
 
@@ -585,7 +585,7 @@ namespace HsMod
             set { PluginConfig.isTimeGearEnable.Value = value; }
         }
 
-        public int TimeGearValue
+        public float TimeGearValue
         {
             get { return PluginConfig.timeGear.Value; }
             set { PluginConfig.timeGear.Value = value; }

@@ -158,10 +158,10 @@
       <HintPath>BepInExCore\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Posix">
-      <HintPath>UnstrippedCorlib\Mono.Posix.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\Mono.Posix.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Security">
-      <HintPath>UnstrippedCorlib\Mono.Security.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\Mono.Security.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod.RuntimeDetour">
       <HintPath>BepInExCore\MonoMod.RuntimeDetour.dll</HintPath>
@@ -170,10 +170,10 @@
       <HintPath>BepInExCore\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib">
-      <HintPath>UnstrippedCorlib\mscorlib.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\mscorlib.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
-      <HintPath>UnstrippedCorlib\netstandard.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\netstandard.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>LibHearthstone\Newtonsoft.Json.dll</HintPath>
@@ -190,7 +190,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration">
-      <HintPath>UnstrippedCorlib\System.Configuration.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -214,10 +214,10 @@
       <HintPath>LibHearthstone\System.IO.Compression.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http">
-      <HintPath>UnstrippedCorlib\System.Net.Http.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics">
-      <HintPath>UnstrippedCorlib\System.Numerics.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="System.Reflection">
       <HintPath>LibHearthstone\System.Reflection.dll</HintPath>
@@ -238,23 +238,23 @@
       <HintPath>LibHearthstone\System.Runtime.InteropServices.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization">
-      <HintPath>UnstrippedCorlib\System.Runtime.Serialization.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Runtime.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="System.Security">
-      <HintPath>UnstrippedCorlib\System.Security.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Security.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading">
       <HintPath>LibHearthstone\System.Threading.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq">
-      <HintPath>UnstrippedCorlib\System.Xml.Linq.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\System.Xml.Linq.dll</HintPath>
     </Reference>
     <Reference Include="UniTask">
-      <HintPath>UnstrippedCorlib\UniTask.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\UniTask.dll</HintPath>
     </Reference>
     <Reference Include="UniTask.Linq">
-      <HintPath>UnstrippedCorlib\UniTask.Linq.dll</HintPath>
+      <HintPath>UnstrippedCorlibUinx\UniTask.Linq.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Burst">
       <HintPath>LibHearthstone\Unity.Burst.dll</HintPath>

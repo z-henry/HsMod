@@ -237,7 +237,7 @@ namespace HsMod
                 context.Response.ContentType = DetermineContentType(rawUrLower);
 
                 string preUrl = DetermineFilePath(rawUrLower);
-                if (File.Exists(preUrl))   // 用于移除/ ，优先查找本地文件
+                if (VaildFilePath(preUrl))   // 优先查找本地文件
                 {
                     context.Response.ContentType = GetMimeType(Path.GetExtension(preUrl));
                     var file = await File.ReadAllBytesAsync(preUrl);
@@ -281,6 +281,22 @@ namespace HsMod
                 default: preUrl = Path.Combine(PluginConfig.HsModWebSite, rawUrl.Substring(1)); break;
             }
             return preUrl;
+        }
+        private static bool VaildFilePath(string rawUrl)
+        {
+            if (File.Exists(rawUrl))
+            {
+                string rawUrlFilePath = Path.GetFullPath(rawUrl);
+                string websitePath = Path.GetFullPath(PluginConfig.HsModWebSite);
+                //string gameRootPath = Path.GetFullPath(BepInEx.Paths.GameRootPath);
+                //string bepinexRootPath = Path.GetFullPath(BepInEx.Paths.BepInExRootPath);
+                if (rawUrlFilePath.StartsWith(websitePath))
+                {
+                    return true;
+                }
+                return false;
+            }
+            return false;
         }
 
         public static StringBuilder Route(string url = "")
