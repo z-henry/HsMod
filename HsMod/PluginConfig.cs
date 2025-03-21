@@ -79,7 +79,7 @@ namespace HsMod
         public static ConfigEntry<KeyboardShortcut> keyRefund;
         public static ConfigEntry<KeyboardShortcut> keyReadNewCards;
         //public static ConfigEntry<KeyboardShortcut> keyRuin;    //毁灭吧赶紧的
-        public static ConfigEntry<KeyboardShortcut> keyZeroDollarBuy;
+        public static ConfigEntry<KeyboardShortcut> keyZeroDollarShopping;
         public static ConfigEntry<KeyboardShortcut> keyShowFPS;
 
         public static ConfigEntry<KeyboardShortcut> keyEmoteGreetings;
@@ -255,7 +255,7 @@ namespace HsMod
             keySoundMute = config.Bind(LocalizationManager.GetLangValue("keySoundMute.label"), LocalizationManager.GetLangValue("keySoundMute.name"), new KeyboardShortcut(KeyCode.S, KeyCode.LeftControl), LocalizationManager.GetLangValue("keySoundMute.description"));
             keyShutUpBob = config.Bind(LocalizationManager.GetLangValue("keyShutUpBob.label"), LocalizationManager.GetLangValue("keyShutUpBob.name"), new KeyboardShortcut(KeyCode.B, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyShutUpBob.description"));
             keyRefund = config.Bind(LocalizationManager.GetLangValue("keyRefund.label"), LocalizationManager.GetLangValue("keyRefund.name"), new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyRefund.description"));
-            keyZeroDollarBuy = config.Bind(LocalizationManager.GetLangValue("keyZeroDollarBuy.label"), LocalizationManager.GetLangValue("keyZeroDollarBuy.name"), new KeyboardShortcut(KeyCode.Alpha0), LocalizationManager.GetLangValue("keyZeroDollarBuy.description"));
+            keyZeroDollarShopping = config.Bind(LocalizationManager.GetLangValue("keyZeroDollarShopping.label"), LocalizationManager.GetLangValue("keyZeroDollarShopping.name"), new KeyboardShortcut(KeyCode.Alpha0), LocalizationManager.GetLangValue("keyZeroDollarShopping.description"));
             //keyRuin = config.Bind(LocalizationManager.GetLangValue("//keyRuin.label"), LocalizationManager.GetLangValue("//keyRuin.name"), new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), LocalizationManager.GetLangValue("//keyRuin.description"));
             keyReadNewCards = config.Bind(LocalizationManager.GetLangValue("keyReadNewCards.label"), LocalizationManager.GetLangValue("keyReadNewCards.name"), new KeyboardShortcut(KeyCode.R, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyReadNewCards.description"));
             keyShowFPS = config.Bind(LocalizationManager.GetLangValue("keyShowFPS.label"), LocalizationManager.GetLangValue("keyShowFPS.name"), new KeyboardShortcut(KeyCode.P, KeyCode.LeftControl), LocalizationManager.GetLangValue("keyShowFPS.description"));
