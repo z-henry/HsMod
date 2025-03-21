@@ -645,6 +645,121 @@ namespace HsMod
             }
         }
 
+
+        public static void ZeroDollarShopping()
+        {
+            if (SceneMgr.Get().GetMode() == SceneMgr.Mode.STARTUP || SceneMgr.Get().GetMode() == SceneMgr.Mode.LOGIN)
+            {
+                UIStatus.Get().AddInfo("未初始化！");
+                return;
+            }
+            if (SceneMgr.Get().GetMode() == SceneMgr.Mode.GAMEPLAY)
+            {
+                UIStatus.Get().AddInfo("不能在游戏内购买！");
+                return;
+            }
+            if (!StoreManager.Get().IsOpen())
+            {
+                UIStatus.Get().AddInfo("商店初始化失败！");
+                return;
+            }
+            try
+            {
+                Hearthstone.Store.ProductInfo gz = null;
+
+                foreach (PegasusUtil.ProductType t in Enum.GetValues(typeof(PegasusUtil.ProductType)))
+                {
+                    foreach (var bundle in StoreManager.Get().GetAvailableBundlesForProduct(t, true))
+                    {
+                        Utils.MyLogger(LogLevel.Info, $"[{StoreManager.Get().CanBuyBundle(bundle)}]{t.ToString()}[true] id={bundle?.Id} title={bundle?.Title} des={bundle?.Description}");
+                        foreach (CurrencyType pt in Enum.GetValues(typeof(CurrencyType)))
+                        {
+
+                            if (null != bundle)
+                            {
+                                if (bundle.Id.Value == 1914499)
+                                {
+                                    Utils.MyLogger(LogLevel.Info, $"found.");
+                                    gz = bundle;
+                                    StoreManager.Get().StartStoreBuy(new BuyPmtProductEventArgs(bundle, CurrencyType.GOLD, 1));
+                                    UIStatus.Get().AddInfo("请等待购买完成，如果UI卡住，请重进游戏。", 60);
+                                    return;
+                                }
+                                var pd = bundle?.GetPriceDataModel(pt);
+                                double totalPrice;
+                                if (!bundle.TryGetBundlePrice(pt, out totalPrice))
+                                {
+                                    //Utils.MyLogger(LogLevel.Warning, string.Format("Product {0} does not have requested cost for {1}", bundle.Id, pd));
+                                    continue;
+                                }
+                                Utils.MyLogger(LogLevel.Info, $"type={pt} price={totalPrice} Amount={pd?.Amount} OriginalAmount={pd?.OriginalAmount} OriginalDisplayText={pd?.OriginalDisplayText}");
+                                if (totalPrice == 0)
+                                {
+                                    Utils.MyLogger(LogLevel.Warning, $"{t.ToString()}[true] id={bundle?.Id} title={bundle?.Title} price=0!!!");
+                                    //StoreManager.Get().StartStoreBuy(new BuyPmtProductEventArgs(bundle, pt, 1));
+                                }
+
+                            }
+                        }
+                        foreach (var id in bundle?.SaleIds)
+                        {
+                            Utils.MyLogger(LogLevel.Info, $"saleid={id}");
+                        }
+                        foreach (var item in bundle?.Items)
+                        {
+                            Utils.MyLogger(LogLevel.Info, $"ShopAvailableDate={item.ShopAvailableDate} data={item.ProductData} type={item.ItemType.ToString()}  quantity={item.Quantity}");
+                        }
+                    }
+                }
+                foreach (PegasusUtil.ProductType t in Enum.GetValues(typeof(PegasusUtil.ProductType)))
+                {
+                    foreach (var bundle in StoreManager.Get().GetAvailableBundlesForProduct(t, false))
+                    {
+
+                        Utils.MyLogger(LogLevel.Info, $"[{StoreManager.Get().CanBuyBundle(bundle)}]{t.ToString()}[false] id={bundle?.Id} title={bundle?.Title} des={bundle?.Description}");
+                        foreach (CurrencyType pt in Enum.GetValues(typeof(CurrencyType)))
+                        {
+
+                            if (null != bundle)
+                            {
+                                var pd = bundle?.GetPriceDataModel(pt);
+                                double totalPrice;
+                                if (!bundle.TryGetBundlePrice(pt, out totalPrice))
+                                {
+                                    //Utils.MyLogger(LogLevel.Warning, string.Format("Product {0} does not have requested cost for {1}", bundle.Id, pd));.
+                                    continue;
+                                }
+                                Utils.MyLogger(LogLevel.Info, $"type={pt} price={totalPrice} Amount={pd?.Amount} OriginalAmount={pd?.OriginalAmount} OriginalDisplayText={pd?.OriginalDisplayText}");
+                                if (totalPrice == 0)
+                                {
+                                    Utils.MyLogger(LogLevel.Warning, $"{t.ToString()}[true] id={bundle?.Id} title={bundle?.Title} price=0!!!");
+                                    //StoreManager.Get().StartStoreBuy(new BuyPmtProductEventArgs(gz, pt, 1));
+                                }
+                            }
+                        }
+                        foreach (var id in bundle?.SaleIds)
+                        {
+                            Utils.MyLogger(LogLevel.Info, $"saleid={id}");
+                        }
+                        foreach (var item in bundle?.Items)
+                        {
+                            Utils.MyLogger(LogLevel.Info, $"ShopAvailableDate={item.ShopAvailableDate} data={item.ProductData} type={item.ItemType.ToString()}  quantity={item.Quantity}");
+                        }
+                    }
+
+
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                Utils.MyLogger(LogLevel.Warning, ex);
+            }
+
+        }
+
         public static List<int> CacheCoin = new List<int>();
         public static List<int> CacheCoinCard = new List<int>();
         public static List<int> CacheGameBoard = new List<int>();

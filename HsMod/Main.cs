@@ -232,6 +232,10 @@ namespace HsMod
                     SoundManagerPatch.OnMuteKeyPressed();
                     return;
                 }
+                else if (keyZeroDollarBuy.Value.IsDown())
+                {
+                    Utils.ZeroDollarShopping();
+                }
                 else
                 {
                     if (keyReadNewCards.Value.IsDown())
