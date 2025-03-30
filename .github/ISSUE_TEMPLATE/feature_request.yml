@@ -1,3 +1,4 @@
+blank_issues_enabled: false
 name: Feature request/新特性请求
 description: Suggest an idea./提出建议
 labels: [enhancement]
