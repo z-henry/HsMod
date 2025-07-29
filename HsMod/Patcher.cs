@@ -21,6 +21,8 @@ namespace HsMod
     //    Harmony mHarmony;
     //    Type mType;
     //}
+
+
     public static class PatchManager
     {
         public static List<Harmony> AllHarmony = new List<Harmony>();    //保存补丁信息，方便定向卸载。
@@ -1459,6 +1461,7 @@ namespace HsMod
                 return list;
             }
 
+
             //解锁酒馆礼遇
             [HarmonyPrefix]
             [HarmonyPatch(typeof(MulliganManager), "ToggleHoldState", new Type[] { typeof(Card) })]
@@ -1476,12 +1479,12 @@ namespace HsMod
             [HarmonyPatch(typeof(TB_BaconShop), "ConfigureLockedMulliganCardActor")]
             public static bool PatchConfigureLockedMulliganCardActor(Actor actor, bool shown)
             {
-                if (isBgsSeasonTicketUnlock.Value) {
-                    return false; 
+                if (isBgsSeasonTicketUnlock.Value)
+                {
+                    return false;
                 }
                 return true;
             }
-
             //快速战斗 - 理论上可以用于所有模式 现只应用于酒馆战旗或佣兵战纪的ai
             [HarmonyReversePatch]
             [HarmonyPatch(typeof(SpellController), "OnProcessTaskList")]
@@ -1580,7 +1583,12 @@ namespace HsMod
 
         public class PatchHearthstone
         {
+
+
             // fix #131
+
+
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(TagMap), "GetMap")]
             public static void PatchTagMapGetMap(ref Dictionary<int, int> __result)
@@ -1940,12 +1948,15 @@ namespace HsMod
                             UIStatus.Get().AddInfo($"注意: {hintText2}", 15f);
                         }
                     }
+
+
                 }
                 catch (Exception ex)
                 {
                     Utils.MyLogger(BepInEx.Logging.LogLevel.Error, ex);
                 }
             }
+
 
             // 变装大师识别，40牌识别
             [HarmonyPrefix]
@@ -2046,10 +2057,10 @@ namespace HsMod
             {
                 if (sceneDef != null)
                 {
-                    if (skinPet.Value == 0)
-                        sceneDef.SetupData.FriendlyPetSkinDbId = 0;
-                    if (skinOpposingPet.Value == 0)
-                        sceneDef.SetupData.OpponentPetSkinDbId = 0;
+                    if (skinPet.Value != -1)
+                        sceneDef.SetupData.FriendlyPetSkinDbId = skinPet.Value;
+                    if (skinOpposingPet.Value != -1)
+                        sceneDef.SetupData.OpponentPetSkinDbId = skinOpposingPet.Value;
                 }
             }
 
@@ -2433,6 +2444,27 @@ namespace HsMod
                 if (skinBgsBoard.Value != 0 && Utils.CheckInfo.IsBgsBoard())
                     chosenBoardSkinId = skinBgsBoard.Value;
             }
+
+            //反和谐
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AssetLoader), "GetRuntimeAssetVariant", new Type[]
+            {
+                    typeof(AssetReference),
+                    typeof(Hearthstone.AssetVariantTags.Quality),
+                    typeof(bool)
+            })]
+            public static bool PatchAssetLoader(ref AssetReference assetRef, ref bool disableLocalization)
+            {
+                if (isPatchAssetLoader.Value)
+                {
+                    if (assetRef.FileName != null && assetRef.FileName.Length > 7 && !assetRef.FileName.ToLower().Contains("logo") && assetRef.FileName.Substring(assetRef.FileName.Length - 7) != ".prefab" && assetRef.FileName.Substring(assetRef.FileName.Length - 4) != ".wav" && assetRef.FileName.Contains("."))
+                    {
+                        disableLocalization = true;
+                    }
+                }
+                return true;
+            }
+
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(FinisherGameplaySettings), "GetFinisherGameplaySettings")]
