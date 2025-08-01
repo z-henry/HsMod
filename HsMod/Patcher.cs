@@ -2445,27 +2445,6 @@ namespace HsMod
                     chosenBoardSkinId = skinBgsBoard.Value;
             }
 
-            //反和谐
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(AssetLoader), "GetRuntimeAssetVariant", new Type[]
-            {
-                    typeof(AssetReference),
-                    typeof(Hearthstone.AssetVariantTags.Quality),
-                    typeof(bool)
-            })]
-            public static bool PatchAssetLoader(ref AssetReference assetRef, ref bool disableLocalization)
-            {
-                if (isPatchAssetLoader.Value)
-                {
-                    if (assetRef.FileName != null && assetRef.FileName.Length > 7 && !assetRef.FileName.ToLower().Contains("logo") && assetRef.FileName.Substring(assetRef.FileName.Length - 7) != ".prefab" && assetRef.FileName.Substring(assetRef.FileName.Length - 4) != ".wav" && assetRef.FileName.Contains("."))
-                    {
-                        disableLocalization = true;
-                    }
-                }
-                return true;
-            }
-
-
             [HarmonyPrefix]
             [HarmonyPatch(typeof(FinisherGameplaySettings), "GetFinisherGameplaySettings")]
             public static bool PatchGetFinisherGameplaySettings(ref Entity hero, ref FinisherGameplaySettings __result)
@@ -2507,6 +2486,27 @@ namespace HsMod
                 __result = finisherGameplaySettings;
                 return false;
             }
+            
+            //反和谐
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AssetLoader), "GetRuntimeAssetVariant", new Type[]
+            {
+                    typeof(AssetReference),
+                    typeof(Hearthstone.AssetVariantTags.Quality),
+                    typeof(bool)
+            })]
+            public static bool PatchAssetLoader(ref AssetReference assetRef, ref bool disableLocalization)
+            {
+                if (isPatchAssetLoader.Value)
+                {
+                    if (assetRef.FileName != null && assetRef.FileName.Length > 7 && !assetRef.FileName.ToLower().Contains("logo") && assetRef.FileName.Substring(assetRef.FileName.Length - 7) != ".prefab" && assetRef.FileName.Substring(assetRef.FileName.Length - 4) != ".wav" && assetRef.FileName.Contains("."))
+                    {
+                        disableLocalization = true;
+                    }
+                }
+                return true;
+            }
+
 
             //偏好硬币修改，不需要patch
             //[HarmonyPrefix]
