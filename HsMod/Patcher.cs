@@ -2355,23 +2355,23 @@ namespace HsMod
             }
 
 
-            //鲍勃替换语音
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(TB_BaconShop), "GetFavoriteBattlegroundsGuideSkinCardId")]
-            public static bool PatchGetFavoriteBattlegroundsGuideSkinCardId(ref string __result)
-            {
-                if (skinBob.Value == -1)
-                    return true;
-                else
-                {
-                    if (Utils.CheckInfo.IsHero(skinBob.Value, out Assets.CardHero.HeroType _))
-                    {
-                        __result = GameUtils.TranslateDbIdToCardId(skinBob.Value);
-                        return false;
-                    }
-                    else return true;
-                }
-            }
+            ////鲍勃替换语音
+            //[HarmonyPrefix]
+            //[HarmonyPatch(typeof(TB_BaconShop), "GetFavoriteBattlegroundsGuideSkinCardId")]
+            //public static bool PatchGetFavoriteBattlegroundsGuideSkinCardId(ref string __result)
+            //{
+            //    if (skinBob.Value == -1)
+            //        return true;
+            //    else
+            //    {
+            //        if (Utils.CheckInfo.IsHero(skinBob.Value, out Assets.CardHero.HeroType _))
+            //        {
+            //            __result = GameUtils.TranslateDbIdToCardId(skinBob.Value);
+            //            return false;
+            //        }
+            //        else return true;
+            //    }
+            //}
 
             //游戏面板替换
             [HarmonyPrefix]
