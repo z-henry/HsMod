@@ -32,9 +32,9 @@ jobs:
     
     # Set up Python
     - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
     
     # Push to Telegram
     - name: Post to Telegram
