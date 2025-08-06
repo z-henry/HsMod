@@ -53,4 +53,4 @@ jobs:
       run: |
         $escaped = & python -c "import os, json, urllib.parse; print(urllib.parse.quote(os.environ['COMMIT_MESSAGE']))"
         $url = "https://api.telegram.org/bot$env:BOT_TOKEN/sendMediaGroup?chat_id=$env:CHAT_ID&message_thread_id=$env:MESSAGE_THREAD_ID&media=%5B%7B%22type%22:%22document%22,%20%22media%22:%22attach://canary%22,%22parse_mode%22:%22MarkdownV2%22,%22caption%22:$escaped%7D%5D"
-        & curl.exe -v $url -F "canary=@./HsMod/Release/HsMod.dll"
+        & curl.exe -v $url -F "canary=@HsMod\\Release\\HsMod.dll"
