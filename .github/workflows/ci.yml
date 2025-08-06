@@ -52,7 +52,9 @@ jobs:
           See commit detail [here](${{ github.event.head_commit.url }})
       run: |
         $escaped = & python -c "import os, json; print(json.dumps(os.environ['COMMIT_MESSAGE']))"
-        $mediaJson = "[{\"type\":\"document\",\"media\":\"attach://canary\",\"parse_mode\":\"MarkdownV2\",\"caption\":$escaped}]"
+        $mediaJson = @"
+        [{"type":"document","media":"attach://canary","parse_mode":"MarkdownV2","caption":$escaped}]
+        "@
         $url = "https://api.telegram.org/bot$env:BOT_TOKEN/sendMediaGroup"
         & curl.exe -v $url `
           -F "chat_id=$env:CHAT_ID" `
