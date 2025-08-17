@@ -1995,6 +1995,19 @@ namespace HsMod
                     title = $"对手职业是{heroClass}，套牌{oppoCardCount}张";
                 }
             }
+            
+            // 屏蔽暗月宝藏
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Hub), "PreloadLuckyDraw")]
+            public static bool PatchNotifySceneLoadedWhenReady(Hub __instance)
+            {
+                if (shieldMainBoxLuckyDraw.Value)
+                {
+                    return false;
+                }
+                return true;
+            }
+
             //// 生成Power.log
             //[HarmonyPrefix]
             //[HarmonyPatch(typeof(Log), "get_ConfigPath")]
