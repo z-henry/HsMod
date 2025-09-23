@@ -1395,7 +1395,7 @@ namespace HsMod
 
                 System.IO.File.AppendAllText(savePath, "# " + DateTime.Now.ToLocalTime().ToString() + "\t获取到宠物皮肤如下：\n");
                 System.IO.File.AppendAllText(savePath, "# [PET_ID]\t[Name]\n");
-                foreach (var record in GameDbf.Pet.GetRecords())
+                foreach (var record in GameDbf.PetVariant.GetRecords())
                 {
                     string saveString;
                     if (record != null)
