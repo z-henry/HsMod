@@ -1,6 +1,6 @@
 # HsMod
 
- **H**earth**s**tone **Mod**ification Based on BepInEx Hearthstone modification based on BepInEx, the plugin source code is located at [github](https://github.com/Pik-4/HsMod)[.](https://github.com/Pik-4/HsMod)[com](https://github.com/Pik-4/HsMod)[/](https://github.com/Pik-4/HsMod)[Pik](https://github.com/Pik-4/HsMod)[-](https://github.com/Pik-4/HsMod)[4](https://github.com/Pik-4/HsMod)[/](https://github.com/Pik-4/HsMod)[HsMod](https://github.com/Pik-4/HsMod), the plugin will not collect any information about you; the project follows `AGPL-3.0`, and is used for learning and research only.
+ **H**earth**s**tone **Mod**ification Based on BepInEx, the plugin source code is located at [github](https://github.com/Pik-4/HsMod)[.](https://github.com/Pik-4/HsMod)[com](https://github.com/Pik-4/HsMod)[/](https://github.com/Pik-4/HsMod)[Pik](https://github.com/Pik-4/HsMod)[-](https://github.com/Pik-4/HsMod)[4](https://github.com/Pik-4/HsMod)[/](https://github.com/Pik-4/HsMod)[HsMod](https://github.com/Pik-4/HsMod), the plugin will not collect any information about you; the project follows `AGPL-3.0`, and is used for learning and research only.
 
 HsMod plans to develop web-based configuration management. If you are interested, you can check [#122](https://github.com/Pik-4/HsMod/discussions/122)
 
@@ -91,17 +91,11 @@ dotnet build --configuration Release --no-restore
 6. Note: In [BepInEx 5.4.23.2](https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.2), modify `Hearthstone\doorstop_config.ini` to replace `dll_search_path_override =` with `dll_search_path_override = BepInEx\unstripped_corlib` `corlib`
 7. Store `HsMod.dll` in `Hearthstone\BepInEx\plugins`.
 
-Note: unity and mono for Windows, extracted from [unity editor](https://unity.com/ja/releases/editor/whats-new/2021.3.40): 
-
-1. unity is located at `.\Unity 2021.3.40f1\Editor\Data\PlaybackEngines\windowsstandalonesupport\Variations\win32_player_development_mono\Data\Managed`, 
-2. mono Located in `.\Unity 2021.3.40f1\Editor\Data\MonoBleedingEdge\lib\mono\unityjit-win32`, some of the files are located in `unityjit-win32\Facades` )
-3. UniTask Extracted from net48 of OpenMod.UniTask.2021.2.4.1
-
 #### Mac
 
 1. Download the latest version of [BepInEx_macos_x64](https://github.com/BepInEx/BepInEx/releases) (BepInEx 5)and extract it to `Hearthstone/`
 
-2. ~~Download original [Mono](https://unity.bepinex.dev/corlibs/2021.3.40.zip) and [Unity](https://unity.bepinex.dev/libraries/2021.3.40.zip) libraries and unpack to Hearthstone/BepInEx/unstripped_corlib~~. Copy all `dll` which under the project folder `HsMod/UnstrippedCorlibUnix` (`cp HsMod/UnstrippedCorlibUnix/* /Applications/Hearthstone/BepInEx/unstripped_corlib/   ` ). ( PS. Mono and Unity version must same as Hearthstone ).
+2. Copy all `dll` which under the project folder `HsMod/UnstrippedCorlibUnix` (`cp HsMod/UnstrippedCorlibUnix/* /Applications/Hearthstone/BepInEx/unstripped_corlib/` ). ( PS. Mono and Unity version must same as Hearthstone ).
 
 3. Edit the `run_bepinex.sh` file replacing the line ` dll_search_path_override=""`with `dll_search_path_override="BepInEx/unstripped_corlib"`
 
