@@ -313,10 +313,23 @@ namespace HsMod
             {
                 __result = true;
                 return false;
-            }
+			}
+			//移除分辨率限制V2 
+			[HarmonyPrefix]
+			[HarmonyPatch(typeof(ResizeManagerV2), "Update")]
+			public static void PatchUpdate(object __instance)
+			{
+				// 反射拿私有字段 m_minResolutionResizeDelay
+				var f = AccessTools.Field(__instance.GetType(), "m_minResolutionResizeDelay");
+				if (f != null)
+				{
+					f.SetValue(__instance, Time.time + 10.0f);
+				}
+				// 不用 return false，继续跑原方法即可
+			}
 
-            //命令行修改分辨率，阻止炉石自修改
-            [HarmonyPrefix]
+			//命令行修改分辨率，阻止炉石自修改
+			[HarmonyPrefix]
             [HarmonyPatch(typeof(Screen), "SetResolution", new Type[] { typeof(int), typeof(int), typeof(bool) })]
             public static bool PatchSetResolution(ref int width, ref int height, ref bool fullscreen)
             {
