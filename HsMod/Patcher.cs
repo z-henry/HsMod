@@ -315,18 +315,13 @@ namespace HsMod
                 return false;
 			}
 			//移除分辨率限制V2 
-			[HarmonyPrefix]
-			[HarmonyPatch(typeof(ResizeManagerV2), "Update")]
-			public static void PatchUpdate(object __instance)
-			{
-				// 反射拿私有字段 m_minResolutionResizeDelay
-				var f = AccessTools.Field(__instance.GetType(), "m_minResolutionResizeDelay");
-				if (f != null)
-				{
-					f.SetValue(__instance, Time.time + 10.0f);
-				}
-				// 不用 return false，继续跑原方法即可
-			}
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(ResizeManagerV2), "Update")]
+            public static bool PatchResizeManagerV2Update(ref float ___m_minResolutionResizeDelay)
+            {
+                ___m_minResolutionResizeDelay = UnityEngine.Time.time + 114514;
+                return true;
+            }
 
 			//命令行修改分辨率，阻止炉石自修改
 			[HarmonyPrefix]
