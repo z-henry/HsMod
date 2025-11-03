@@ -313,10 +313,18 @@ namespace HsMod
             {
                 __result = true;
                 return false;
+			}
+			//移除分辨率限制V2 
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(ResizeManagerV2), "Update")]
+            public static bool PatchResizeManagerV2Update(ref float ___m_minResolutionResizeDelay)
+            {
+                ___m_minResolutionResizeDelay = UnityEngine.Time.time + 114514;
+                return true;
             }
 
-            //命令行修改分辨率，阻止炉石自修改
-            [HarmonyPrefix]
+			//命令行修改分辨率，阻止炉石自修改
+			[HarmonyPrefix]
             [HarmonyPatch(typeof(Screen), "SetResolution", new Type[] { typeof(int), typeof(int), typeof(bool) })]
             public static bool PatchSetResolution(ref int width, ref int height, ref bool fullscreen)
             {
