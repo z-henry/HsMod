@@ -609,17 +609,23 @@ namespace HsMod
             }
 
             //处理置换
-            [HarmonyPrefix]
+            [HarmonyPostfix]
             [HarmonyPatch(typeof(RedundantNDEPopup), "Show")]
-            public static bool PatchRedundantNDEPopup(ref UIBButton ___m_rerollButton)
+            public static void AutoClickRedundantNDE(UIBButton ___m_rerollButton, RedundantNDEPopup __instance)
             {
                 if (!isAutoRedundantNDE.Value)
-                    return true;
+                    return;
 
-                ___m_rerollButton.TriggerPress();
-                ___m_rerollButton.TriggerRelease();
-                return false;
+                __instance.StartCoroutine(AutoClick(___m_rerollButton));
             }
+
+            private static IEnumerator AutoClick(UIBButton button)
+            {
+                yield return new WaitForSeconds(1f);
+                button.TriggerPress();
+                button.TriggerRelease();
+            }
+
             //处理未领取的奖励
             [HarmonyPostfix]
             [HarmonyPatch(typeof(RewardTrackSeasonRoll), "Show")]
