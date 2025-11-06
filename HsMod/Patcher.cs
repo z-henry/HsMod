@@ -611,7 +611,7 @@ namespace HsMod
             //处理置换
             [HarmonyPostfix]
             [HarmonyPatch(typeof(RedundantNDEPopup), "Show")]
-            public static void AutoClickRedundantNDE(UIBButton ___m_rerollButton, MonoBehaviour __instance)
+            public static void AutoClickRedundantNDE(UIBButton ___m_rerollButton, RedundantNDEPopup __instance)
             {
                 if (!isAutoRedundantNDE.Value)
                     return;
