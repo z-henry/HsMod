@@ -2690,6 +2690,18 @@ namespace HsMod
                 __result = false;
                 return false;
             }
+
+            // 屏蔽推广活动领取的奖励
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(BoosterPackReward), "ShowReward")]
+            public static void PatchBoosterPackReward_ShowReward(BoosterPackReward __instance)
+            {
+                if (isIGMMessageShow.Value)
+                    return;
+
+                var miHide = AccessTools.Method(__instance.GetType(), "HideReward");
+                miHide?.Invoke(__instance, null);
+            }
         }
 
         //与佣兵挂机插件可能会冲突 故单独写出
