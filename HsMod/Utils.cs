@@ -1274,6 +1274,20 @@ namespace HsMod
             }
         }
 
+        public static IEnumerator PegUIElementDelayClick(PegUIElement catcher, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+
+            catcher.TriggerPress();
+            catcher.TriggerRelease();
+        }
+        public static IEnumerator UIBButtonDelayClick(UIBButton button, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            button.TriggerPress();
+            button.TriggerRelease();
+        }
+
         public static class LeakInfo
         {
             public static void Mercenaries()

@@ -314,13 +314,32 @@ namespace HsMod
                 __result = true;
                 return false;
 			}
-			//移除分辨率限制V2 
+            //移除分辨率限制V2 
+            /*
             [HarmonyPrefix]
             [HarmonyPatch(typeof(ResizeManagerV2), "Update")]
             public static bool PatchResizeManagerV2Update(ref float ___m_minResolutionResizeDelay)
             {
                 ___m_minResolutionResizeDelay = UnityEngine.Time.time + 114514;
                 return true;
+            }
+            */
+            // 上面的方法会导致偶尔出现炉石窗口消失，这里用transpiler修改分辨率值
+            [HarmonyTranspiler]
+            [HarmonyPatch(typeof(ResizeManagerV2), "Update")]
+            public static IEnumerable<CodeInstruction> Patch_ResizeManagerV2_Update(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            {
+                int counter = 0;
+                foreach (var code in instructions)
+                {
+                    if (code.opcode == OpCodes.Ldc_I4 && code.operand is int v && v == 400)
+                    {
+                        // 偶数位当成 width -> 144；奇数位当成 height -> 108
+                        code.operand = (counter % 2 == 0) ? 144 : 108;
+                        counter++;
+                    }
+                    yield return code;
+                }
             }
 
 			//命令行修改分辨率，阻止炉石自修改
@@ -450,7 +469,7 @@ namespace HsMod
 
             //屏蔽错误报告
             [HarmonyPrefix]
-            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "ReportCaughtException", new Type[] { typeof(Exception), typeof(string)})]
+            [HarmonyPatch(typeof(Blizzard.BlizzardErrorMobile.ExceptionReporter), "ReportCaughtException", new Type[] { typeof(Exception) })]
             public static bool PatchReportCaughtException(ref Exception exception)
             {
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "message:" + exception.Message + "\nInnerException:\n" + exception.InnerException + "\nStackTrace:\n" + exception.StackTrace);
@@ -616,14 +635,7 @@ namespace HsMod
                 if (!isAutoRedundantNDE.Value)
                     return;
 
-                __instance.StartCoroutine(AutoClick(___m_rerollButton));
-            }
-
-            private static IEnumerator AutoClick(UIBButton button)
-            {
-                yield return new WaitForSeconds(1f);
-                button.TriggerPress();
-                button.TriggerRelease();
+                __instance.StartCoroutine(Utils.UIBButtonDelayClick(___m_rerollButton, 1f));
             }
 
             //处理未领取的奖励
@@ -2825,13 +2837,13 @@ namespace HsMod
             // 屏蔽推广活动领取的奖励
             [HarmonyPostfix]
             [HarmonyPatch(typeof(BoosterPackReward), "ShowReward")]
-            public static void PatchBoosterPackReward_ShowReward(BoosterPackReward __instance)
+            public static void PatchBoosterPackReward_ShowReward(PegUIElement ___m_clickCatcher, BoosterPackReward __instance)
             {
                 if (isIGMMessageShow.Value)
                     return;
 
-                var miHide = AccessTools.Method(__instance.GetType(), "HideReward");
-                miHide?.Invoke(__instance, null);
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "[Patch] BoosterPackReward");
+                __instance.StartCoroutine(Utils.PegUIElementDelayClick(___m_clickCatcher, 1f));
             }
         }
 
