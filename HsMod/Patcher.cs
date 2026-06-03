@@ -2840,6 +2840,35 @@ namespace HsMod
                 return false;
             }
 
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Reward), "Show")]
+            public static void PatchReward_Show(Reward __instance)
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"[Patch] Reward.Show {__instance?.GetType().FullName}");
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(LoginPopupSequencePopup), "Show")]
+            public static void PatchLoginPopupSequencePopup_Show(LoginPopupSequencePopup __instance)
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "[Patch] LoginPopupSequencePopup.Show");
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(CardPopups), "ShowFeaturedCards")]
+            public static void PatchCardPopups_ShowFeaturedCards(EventTimingType featuredCardsEvent, string headerText, DialogBase.HideCallback callbackOnHide, UserAttentionBlocker ignoredAttentionBlockers, bool __result)
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"[Patch] CardPopups.ShowFeaturedCards result={__result}, event={featuredCardsEvent}, header={headerText}, ignoredAttentionBlockers={ignoredAttentionBlockers}");
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(CardPopups), "ShowPopup")]
+            public static void PatchCardPopups_ShowPopup(UserAttentionBlocker ignoredAttentionBlockers, bool __result)
+            {
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, $"[Patch] CardPopups.ShowPopup result={__result}, ignoredAttentionBlockers={ignoredAttentionBlockers}");
+            }
+
             // 屏蔽推广活动领取的奖励
             [HarmonyPostfix]
             [HarmonyPatch(typeof(BoosterPackReward), "ShowReward")]
@@ -2849,6 +2878,17 @@ namespace HsMod
                     return;
 
                 Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "[Patch] BoosterPackReward");
+                __instance.StartCoroutine(Utils.PegUIElementDelayClick(___m_clickCatcher, 1f));
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(CardReward), "ShowReward")]
+            public static void PatchCardReward_ShowReward(PegUIElement ___m_clickCatcher, CardReward __instance)
+            {
+                if (isIGMMessageShow.Value)
+                    return;
+
+                Utils.MyLogger(BepInEx.Logging.LogLevel.Warning, "[Patch] CardReward");
                 __instance.StartCoroutine(Utils.PegUIElementDelayClick(___m_clickCatcher, 1f));
             }
         }
