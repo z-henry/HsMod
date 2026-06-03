@@ -260,6 +260,21 @@ namespace HsMod
             }
             else
             {
+                if (rawUrLower == "/api/state" || rawUrLower.StartsWith("/api/state?"))
+                {
+                    context.Response.ContentType = "application/json; charset=UTF-8";
+                    string afterSequenceText = request.QueryString["afterSequence"];
+                    if (!long.TryParse(afterSequenceText, out long afterSequence))
+                        afterSequence = 0;
+
+                    using (var writer = new StreamWriter(context.Response.OutputStream))
+                    {
+                        await writer.WriteLineAsync(HsModApiCache.GetStateJson(afterSequence));
+                    }
+                    context.Response.OutputStream.Close();
+                    return;
+                }
+
                 context.Response.ContentType = DetermineContentType(rawUrLower);
 
                 string preUrl = DetermineFilePath(rawUrLower);

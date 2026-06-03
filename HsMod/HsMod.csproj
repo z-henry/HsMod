@@ -394,6 +394,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileManager.cs" />
+    <Compile Include="HsModApiCache.cs" />
+    <Compile Include="HsModApiModels.cs" />
+    <Compile Include="HsModApiPatches.cs" />
     <Compile Include="LocalizationManager.cs" />
     <Compile Include="PluginConfig.cs" />
     <Compile Include="Patcher.cs" />

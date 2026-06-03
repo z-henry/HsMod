@@ -161,12 +161,15 @@ namespace HsMod
             }
 
             //启动web服务
+            HsModApiCache.RefreshSnapshot(true);
             WebServer.Start();
 
         }
 
         private void Update()
         {
+            HsModApiCache.RefreshSnapshot(false);
+
             // todo: check game status
             if ((autoQuitTimer.Value > 0) && (ConfigValue.Get().RunningTime >= (autoQuitTimer.Value + 1818)))
             {
